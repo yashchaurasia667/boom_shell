@@ -16,6 +16,7 @@ PanelWindow {
   property int launcherWidth: 800
   property int launcherHeight: 400
   property int maxResults: 10
+  // property int hideDelay: 150
 
   anchors {
     top: true
@@ -27,7 +28,18 @@ PanelWindow {
   exclusionMode: ExclusionMode.Ignore
   aboveWindows: true
   color: "transparent"
-  visible: open
+  visible: open || hideDelay.running
+
+  Timer {
+    id: hideDelay
+    interval: 150
+    onTriggered: {}
+  }
+
+  onOpenChanged: {
+    if (open) searchInput.forceActiveFocus()
+    else hideDelay.restart()
+  }
 
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.namespace: "app-launcher"
@@ -90,15 +102,24 @@ PanelWindow {
   Rectangle {
     id: panel
     anchors {
-      top: parent.top
+      // top: parent.top
+      // topMargin: Global.pillHeight
       horizontalCenter: parent.horizontalCenter
-      topMargin: Global.pillHeight
     }
-    implicitWidth: launcher.launcherWidth
-    implicitHeight: launcher.launcherHeight
+    width: open ? launcher.launcherWidth : 0
+    height: launcher.launcherHeight
+
     radius: Global.panelRadius
     color: "transparent"
     // color: Theme.m3surface
+
+    y: open ? Global.pillHeight : -launcher.launcherHeight
+    Behavior on y {
+      NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+    }
+    Behavior on width {
+      NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+    }
 
     // swallow clicks so they don't fall through to the backdrop
     MouseArea {
@@ -107,7 +128,8 @@ PanelWindow {
     }
 
     Shape {
-      anchors.fill: parent
+      // anchors.fill: parent
+      anchors.centerIn: parent
       preferredRendererType: Shape.CurveRenderer
 
       ShapePath {
@@ -295,9 +317,5 @@ PanelWindow {
         }
       }
     }
-  }
-
-  onOpenChanged: {
-    if (open) searchInput.forceActiveFocus()
   }
 }
