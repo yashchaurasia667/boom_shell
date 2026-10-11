@@ -32,7 +32,6 @@ PanelWindow {
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.namespace: "media-drawer"
 
-
   onDrawerHoveredChanged: {
     if (drawerHovered) {
       hideTimer.stop()

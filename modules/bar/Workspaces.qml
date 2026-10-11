@@ -72,7 +72,7 @@ Item {
           text: modelData
           color: focused ? Theme.m3surface : Theme.m3on_surface
           font.family: Global.font
-          // font.bold: true
+          font.bold: focused ? true : false
           font.pixelSize: Global.fontSize
         }
 
@@ -110,8 +110,7 @@ Item {
           text: modelData.label
           color: modelData.active ? Theme.m3surface : Theme.m3on_surface
           font.family: Global.font
-          font.weight: 500
-          // font.bold: true
+          font.weight: modelData.active ? 600 : 500
           font.pixelSize: Global.fontSize
         }
 

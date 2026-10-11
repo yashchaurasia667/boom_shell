@@ -13,6 +13,7 @@ import qs.common
 PanelWindow {
   id: root
   property int panelMargins: 10
+  property string compFont: "Maple Mono NF CN"
 
   anchors {
     right: true
@@ -26,7 +27,12 @@ PanelWindow {
 
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
   BackgroundEffect.blurRegion: Region {
-    item: clippingRect
+    // item: clippingRect
+    x: clippingRect.x
+    y: clippingRect.y
+    width: clippingRect.width
+    height: clippingRect.height
+    radius: clippingRect.radius
   }
   
   // Persistent Storage configuration
@@ -49,7 +55,7 @@ PanelWindow {
     radius: 12
     color: Qt.rgba(Theme.m3surface.r, Theme.m3surface.g, Theme.m3surface.b, 0.75)
     border.color: Theme.m3inverse_on_surface
-    border.width: 1
+    border.width: 2
 
     ColumnLayout {
       anchors.fill: parent
@@ -60,15 +66,17 @@ PanelWindow {
       RowLayout {
         Layout.fillWidth: true
 
-        Text {
+        Label {
           text: "To-Do List"
           color: Theme.m3on_surface
+          font.family: compFont
           font.pixelSize: 16
           font.bold: true
         }
         Item { Layout.fillWidth: true }
 
-        Text {
+        Label {
+          font.family: compFont
           text: todoModel.count + " items"
           color: Theme.m3on_surface
           font.pixelSize: 12
@@ -137,6 +145,7 @@ PanelWindow {
           height: 30
           color: Theme.m3on_secondary
           radius: 6
+          clip: true
 
           RowLayout {
             anchors.fill: parent
@@ -150,8 +159,9 @@ PanelWindow {
               }
             }
 
-            Text {
+            Label {
               Layout.fillWidth: true
+              font.family: compFont
               text: taskText
               color: isCompleted ? Theme.m3primary : Theme.m3on_surface
               font.strikeout: isCompleted

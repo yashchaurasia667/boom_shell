@@ -13,9 +13,9 @@ PanelWindow {
   id: launcher
 
   property bool open: false
-  property int launcherWidth: 600
-  property int launcherHeight: 440
-  property int maxResults: 8
+  property int launcherWidth: 800
+  property int launcherHeight: 400
+  property int maxResults: 10
 
   anchors {
     top: true
@@ -50,7 +50,14 @@ PanelWindow {
 
   function launch(entry): void {
     if (!entry) return
-    Quickshell.execDetached(entry.command)
+
+    if (entry.runInTerminal) {
+      const terminal = Quickshell.env("TERMINAL") ?? "alacritty"
+      Quickshell.execDetached([terminal, "-e", ...entry.command])
+    } else {
+      Quickshell.execDetached(entry.command)
+    }
+
     hide()
   }
 
@@ -63,8 +70,16 @@ PanelWindow {
 
   // click-outside-to-close backdrop
   Rectangle {
-    anchors.fill: parent
-    color: "#80000000"
+    anchors {
+      fill: parent
+      topMargin: Global.pillHeight
+      leftMargin: Global.border
+      rightMargin: Global.border
+      bottomMargin: Global.border
+    }
+
+    color: Qt.rgba(Theme.m3shadow.r, Theme.m3shadow.g, Theme.m3shadow.b, 0.3)
+    radius: Global.borderRadius
 
     MouseArea {
       anchors.fill: parent
@@ -74,18 +89,60 @@ PanelWindow {
 
   Rectangle {
     id: panel
-    width: launcher.launcherWidth
-    height: launcher.launcherHeight
-    anchors.centerIn: parent
-    radius: Global.earRadius
-    color: Theme.m3surface
-    border.color: Theme.m3surface_variant
-    border.width: 1
+    anchors {
+      top: parent.top
+      horizontalCenter: parent.horizontalCenter
+      topMargin: Global.pillHeight
+    }
+    implicitWidth: launcher.launcherWidth
+    implicitHeight: launcher.launcherHeight
+    radius: Global.panelRadius
+    color: "transparent"
+    // color: Theme.m3surface
 
     // swallow clicks so they don't fall through to the backdrop
     MouseArea {
       anchors.fill: parent
       onClicked: {}
+    }
+
+    Shape {
+      anchors.fill: parent
+      preferredRendererType: Shape.CurveRenderer
+
+      ShapePath {
+        startX: 0; startY: 0
+        fillRule: ShapePath.OddEvenFill
+        fillColor: Theme.m3surface
+        strokeColor: "transparent"
+        // strokeWidth: 2
+
+        PathArc {
+          x: Global.panelRadius; y: Global.panelRadius
+          radiusX: Global.panelRadius; radiusY: Global.panelRadius
+        }
+
+        PathLine { x: Global.panelRadius; y: launcherHeight - Global.notchRadius }
+        PathArc {
+          x: Global.panelRadius + Global.notchRadius; y: launcherHeight
+          radiusX: Global.notchRadius; radiusY: Global.notchRadius
+          direction: PathArc.Counterclockwise
+        }
+
+        PathLine { x: launcherWidth - Global.panelRadius - Global.notchRadius; y: launcherHeight }
+
+        PathArc {
+          x: launcherWidth - Global.panelRadius; y: launcherHeight - Global.notchRadius
+          radiusX: Global.notchRadius; radiusY: Global.notchRadius
+          direction: PathArc.Counterclockwise
+        }
+        PathLine { x: launcherWidth - Global.panelRadius; y: Global.panelRadius }
+
+        PathArc {
+          x: launcherWidth; y: 0
+          radiusX: Global.panelRadius; radiusY: Global.panelRadius
+        }
+      }
     }
 
     ColumnLayout {
@@ -95,11 +152,13 @@ PanelWindow {
 
       RowLayout {
         Layout.fillWidth: true
-        spacing: 10
+        Layout.leftMargin: Global.panelRadius
+        Layout.rightMargin: Global.panelRadius
+        spacing: 20
 
         Icon {
           text: "search"
-          font.pixelSize: 18
+          font.pixelSize: 24
           color: Theme.m3on_surface
         }
 
@@ -128,7 +187,7 @@ PanelWindow {
 
           Label {
             visible: searchInput.text === ""
-            text: "Search apps…"
+            text: "Search..."
             color: Theme.m3on_surface
             opacity: 0.5
             font.pixelSize: 16
@@ -138,6 +197,8 @@ PanelWindow {
 
       Rectangle {
         Layout.fillWidth: true
+        Layout.leftMargin: Global.panelRadius
+        Layout.rightMargin: Global.panelRadius
         height: 1
         color: Theme.m3surface_variant
       }
@@ -146,6 +207,10 @@ PanelWindow {
         id: listView
         Layout.fillWidth: true
         Layout.fillHeight: true
+
+        Layout.leftMargin: Global.panelRadius
+        Layout.rightMargin: Global.panelRadius
+
         clip: true
         model: ScriptModel {
           id: filteredApps
@@ -169,19 +234,21 @@ PanelWindow {
           required property int index
 
           width: ListView.view.width
-          height: 50
+          height: 48 + Global.pad
           radius: 8
-          color: index === listView.currentIndex ? Theme.m3surface_variant : "transparent"
+          color: index === listView.currentIndex ? Theme.m3primary : "transparent"
 
           RowLayout {
             anchors.fill: parent
             anchors.margins: 8
-            spacing: 10
+            anchors.topMargin: Global.pad
+            anchors.bottomMargin: Global.pad
+            spacing: 20
 
             Image {
-              Layout.preferredWidth: 35
-              Layout.preferredHeight: 35
-              source: Quickshell.iconPath(resultRow.modelData.icon, true)
+              Layout.preferredWidth: 40
+              Layout.preferredHeight: 40
+              source: Quickshell.iconPath(resultRow.modelData.icon, "application-x-executable")
               fillMode: Image.PreserveAspectFit
               asynchronous: true
             }
@@ -193,16 +260,18 @@ PanelWindow {
               Label {
                 Layout.fillWidth: true
                 text: resultRow.modelData.name
-                font.pixelSize: 14
+                color: index === listView.currentIndex ? Theme.m3surface : Theme.m3primary
+                font.weight: 600
+                font.pixelSize: 16
                 elide: Text.ElideRight
               }
 
               Label {
                 Layout.fillWidth: true
-                visible: resultRow.modelData.genericName !== ""
+                visible: resultRow.modelData.genericName !== " "
                 text: resultRow.modelData.genericName
                 font.pixelSize: 12
-                color: Theme.m3on_surface
+                color: index === listView.currentIndex ? Theme.m3surface : Theme.m3on_surface
                 opacity: 0.6
                 elide: Text.ElideRight
               }
