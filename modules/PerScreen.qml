@@ -47,5 +47,6 @@ Scope {
     open: root.showNotifications
   }
 
+  AppLauncher {}
 }
 

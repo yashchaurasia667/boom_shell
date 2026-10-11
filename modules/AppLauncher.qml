@@ -16,7 +16,6 @@ PanelWindow {
   property int launcherWidth: 800
   property int launcherHeight: 400
   property int maxResults: 10
-  // property int hideDelay: 150
 
   anchors {
     top: true
@@ -101,23 +100,21 @@ PanelWindow {
 
   Rectangle {
     id: panel
+    clip: true
     anchors {
       // top: parent.top
       // topMargin: Global.pillHeight
       horizontalCenter: parent.horizontalCenter
     }
-    width: open ? launcher.launcherWidth : 0
-    height: launcher.launcherHeight
+    width: launcher.launcherWidth
+    height: open ? launcher.launcherHeight : 0
 
     radius: Global.panelRadius
     color: "transparent"
     // color: Theme.m3surface
 
-    y: open ? Global.pillHeight : -launcher.launcherHeight
-    Behavior on y {
-      NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
-    }
-    Behavior on width {
+    y: Global.pillHeight
+    Behavior on height {
       NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
     }
 
