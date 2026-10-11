@@ -13,5 +13,5 @@ ShellRoot {
     PerScreen {}
   }
   TodoList {}
-  AppLauncher {}
+  // AppLauncher {}
 }
