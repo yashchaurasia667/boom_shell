@@ -3,10 +3,7 @@ import Quickshell
 import QtQuick
 
 import qs.components
-
 import qs.modules
-
-import "modules/notifications"
 import "modules/bar"
 
 ShellRoot {
@@ -15,7 +12,6 @@ ShellRoot {
     model: Quickshell.screens
     PerScreen {}
   }
-  // NotificationToast {}
-  // NotificationCenter {}
-  // TodoList {}
+  TodoList {}
+  AppLauncher {}
 }

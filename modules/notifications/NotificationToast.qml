@@ -26,13 +26,12 @@ PanelWindow {
   }
 
   exclusionMode: ExclusionMode.Ignore
-  WlrLayershell.layer: WlrLayer.Overlay
+  WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.namespace: "notification-popup"
 
   color: "transparent"
   implicitWidth: toastWidth + Global.panelRadius + Global.pad
   implicitHeight: column.implicitHeight === 0 ? 0 : column.implicitHeight + Global.panelRadius + Global.pad
-
 
   // click-through everywhere except where toasts actually are
   mask: Region {

@@ -17,90 +17,100 @@ Item {
     SystemTray.items.values.length * iconSize +
     Math.max(0, SystemTray.items.values.length - 1) * iconSpacing
 
-  implicitWidth: trayContainer.width + iconSpacing + toggleIcon.width
-  implicitHeight: Math.max(iconSize, toggleIcon.height)
+  // Let the internal Row dictate our width automatically. 
+  // Added + 16 here to give a nice 8px padding on both left and right sides.
+  implicitWidth: contentRow.width + 16 
+  implicitHeight: Global.pillHeight - 12
+  Layout.fillWidth: true
 
-  // clipped container holding the actual tray icons — expands/collapses leftward
-  Item {
-    id: trayContainer
-    anchors.right: toggleIcon.left
-    anchors.rightMargin: root.expanded ? root.iconSpacing : 0
-    anchors.verticalCenter: parent.verticalCenter
+  Rectangle {
+    anchors.fill: parent
+    radius: Global.earRadius
+    color: Theme.m3surface_variant
+  }
 
-    clip: true
-    width: root.expanded ? root.trayContentWidth : 0
-    height: root.iconSize
+  // A Row naturally handles the relative positioning without anchor swapping bugs
+  Row {
+    id: contentRow
+    anchors.centerIn: parent // Keeps everything perfectly aligned inside the pill
+    spacing: root.expanded ? root.iconSpacing : 0
 
-    Behavior on width {
+    Behavior on spacing {
       NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
     }
-    Behavior on anchors.rightMargin {
-      NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
-    }
 
-    RowLayout {
-      height: parent.height
-      spacing: root.iconSpacing
-      // anchor to the right edge of the container so icons reveal from the right
-      // (i.e. nearest the toggle) outward, matching the leftward expansion
-      anchors.right: parent.right
+    Item {
+      id: trayContainer
+      clip: true
+      width: root.expanded ? root.trayContentWidth : 0
+      height: root.iconSize
+      anchors.verticalCenter: parent.verticalCenter
 
-      Repeater {
-        model: SystemTray.items
+      Behavior on width {
+        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+      }
 
-        delegate: Item {
-          id: trayIcon
-          required property SystemTrayItem modelData
+      RowLayout {
+        height: parent.height
+        spacing: root.iconSpacing
+        // Keep this anchored to the right so icons reveal nicely outward from the toggle
+        anchors.right: parent.right
 
-          implicitWidth: root.iconSize
-          implicitHeight: root.iconSize
+        Repeater {
+          model: SystemTray.items
 
-          Image {
-            anchors.fill: parent
-            source: trayIcon.modelData.icon
-            fillMode: Image.PreserveAspectFit
-          }
+          delegate: Item {
+            id: trayIcon
+            required property SystemTrayItem modelData
 
-          MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            implicitWidth: root.iconSize
+            implicitHeight: root.iconSize
 
-            onClicked: (mouse) => {
-              if (mouse.button === Qt.LeftButton) {
-                trayIcon.modelData.activate()
-              } else if (mouse.button === Qt.RightButton) {
-                if (trayIcon.modelData.hasMenu) {
-                  menuAnchor.menu = trayIcon.modelData.menu
-                  menuAnchor.open()
+            Image {
+              anchors.fill: parent
+              source: trayIcon.modelData.icon
+              fillMode: Image.PreserveAspectFit
+            }
+
+            MouseArea {
+              anchors.fill: parent
+              acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+              onClicked: (mouse) => {
+                if (mouse.button === Qt.LeftButton) {
+                  trayIcon.modelData.activate()
+                } else if (mouse.button === Qt.RightButton) {
+                  if (trayIcon.modelData.hasMenu) {
+                    menuAnchor.menu = trayIcon.modelData.menu
+                    menuAnchor.open()
+                  }
                 }
               }
             }
-          }
 
-          QsMenuAnchor {
-            id: menuAnchor
-            anchor.window: trayIcon.QsWindow.window
-            anchor.item: trayIcon
-            anchor.rect.y: trayIcon.height
+            QsMenuAnchor {
+              id: menuAnchor
+              anchor.window: trayIcon.QsWindow.window
+              anchor.item: trayIcon
+              anchor.rect.y: trayIcon.height
+            }
           }
         }
       }
     }
-  }
 
-  // fixed toggle icon — stays in place
-  Icon {
-    id: toggleIcon
-    anchors.right: parent.right
-    anchors.verticalCenter: parent.verticalCenter
+    // Static anchors - no dynamic swapping needed
+    Icon {
+      id: toggleIcon
+      anchors.verticalCenter: parent.verticalCenter
+      text: root.expanded ? "chevron_right" : "chevron_left"
+      font.pixelSize: 16
+      color: Theme.m3primary
 
-    text: root.expanded ? "chevron_right" : "chevron_left"
-    font.pixelSize: 16
-    color: Theme.m3primary
-
-    MouseArea {
-      anchors.fill: parent
-      onClicked: root.expanded = !root.expanded
+      MouseArea {
+        anchors.fill: parent
+        onClicked: root.expanded = !root.expanded
+      }
     }
   }
 }

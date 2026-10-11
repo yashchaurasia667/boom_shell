@@ -57,7 +57,7 @@ Item {
         height: Global.pillHeight - 15
         implicitWidth: Global.pillHeight - 15
 
-        color: focused ? Theme.m3primary : Theme.m3surface_variant
+        color: focused ? Theme.m3source_color: Theme.m3surface_variant
         radius: focused ? wsTile.height/2 :  6
 
         // Behavior on color { ColorAnimation { duration: 150 } }
@@ -72,6 +72,7 @@ Item {
           text: modelData
           color: focused ? Theme.m3surface : Theme.m3on_surface
           font.family: Global.font
+          font.bold: focused ? true : false
           font.pixelSize: Global.fontSize
         }
 
@@ -88,8 +89,6 @@ Item {
       visible: specialSlots.length > 0
       Layout.preferredWidth: 1
       Layout.fillHeight: true
-      // Layout.topMargin: 3
-      // Layout.bottomMargin: 3
       color: Theme.m3surface_variant
     }
 
@@ -105,14 +104,13 @@ Item {
         color: modelData.active ? Theme.m3tertiary : Theme.m3surface_variant
         radius: 6
 
-        // Behavior on color { ColorAnimation { duration: 150 } }
-
         Text {
           id: label
           anchors.centerIn: parent
           text: modelData.label
           color: modelData.active ? Theme.m3surface : Theme.m3on_surface
           font.family: Global.font
+          font.weight: modelData.active ? 600 : 500
           font.pixelSize: Global.fontSize
         }
 

@@ -7,6 +7,14 @@ import qs.common
 import qs.components
 
 Item {
+  readonly property int charge: Math.round(UPower.displayDevice.percentage * 100)
+  readonly property string batColor: {
+    if(charge >= 90) return Theme.m3primary
+    if(charge >= 50) return Theme.m3tertiary
+    if(charge >= 20) return Theme.m3error
+    return Theme.m3error_container
+  }
+
   implicitWidth: row.implicitWidth
   implicitHeight: row.implicitHeight
 
@@ -28,14 +36,15 @@ Item {
         if (pct <= 95) return "battery_android_6"
         return "battery_android_full"
       }
-      color: Theme.m3primary
+      color: batColor
       font.pixelSize: 18
     }
 
     Label {
-      text: Math.round(UPower.displayDevice.percentage * 100) + "%"
+      text: charge + "%"
       font.bold: true
       font.pixelSize: 14
+      color: batColor
     }
   }
 }

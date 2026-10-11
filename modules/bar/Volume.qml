@@ -35,7 +35,7 @@ Item {
         if (vol <= 0.5) return "volume_down"
         return "volume_up"
       }
-      color: Theme.m3primary
+      color: Theme.m3on_surface
       font.pixelSize: 18
     }
 
@@ -43,6 +43,7 @@ Item {
       text: AudioService.muted ? "muted" : Math.round(AudioService.volume * 100) + "%"
       font.bold: true
       font.pixelSize: 14
+      color: Theme.m3on_surface
     }
   }
 }

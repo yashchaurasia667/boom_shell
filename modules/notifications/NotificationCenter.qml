@@ -1,54 +1,85 @@
 import QtQuick
-import QtQuick.Shapes
-
+import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell
-import Quickshell.Services.Notifications
 
 import qs.common
 import qs.components
 import qs.services
 
-PanelWindow {
-  id: notifcenter
+ColumnLayout {
+  id: panel
+  // anchors {
+  //   top: parent.top
+  //   right: parent.right
+  // }
 
-  anchors {
-    top: true
-    bottom: true
-    right: true
+  spacing: 8
+
+  RowLayout {
+    Layout.fillWidth: true
+    // Layout.alignment: Qt.AlignRight
+    // Layout.margins: Global.panelRadius
+
+    Label {
+      text: "Notifications"
+      font.bold: true
+      font.pixelSize: 16
+      Layout.fillWidth: true
+    }
+
+    Label {
+      visible: NotificationService.hasHistory
+      text: NotificationService.historyCount
+      color: Theme.m3on_surface
+      font.pixelSize: 13
+    }
+
+    Rectangle {
+      visible: NotificationService.hasHistory
+      implicitWidth: clearLabel.implicitWidth + 16
+      implicitHeight: clearLabel.implicitHeight + 8
+      radius: 6
+      color: Theme.m3surface_variant
+      Layout.leftMargin: 8
+
+      Label {
+        id: clearLabel
+        anchors.centerIn: parent
+        text: "Clear all"
+        font.pixelSize: 12
+      }
+
+      MouseArea {
+        anchors.fill: parent
+        onClicked: NotificationService.clearHistory()
+      }
+    }
   }
 
-  aboveWindows: false
-  exclusiveZone: 0
+  ScrollView {
+    Layout.fillWidth: true
+    Layout.fillHeight: true
+    clip: true
 
-  implicitWidth: 400 + Global.panelRadius + Global.pad
-  // implicitHeight: parent.height
-  color: "transparent"
+    ColumnLayout {
+      width: panel.width
+      spacing: 8
 
-  Shape {
-    anchors.fill: parent
-    preferredRendererType: Shape.CurveRenderer
-
-    ShapePath {
-      startX: 0; startY: 0
-      fillRule: ShapePath.OddEvenFill
-      fillColor: Theme.m3surface
-      // fillColor: "white"
-      strokeColor: "transparent"
-
-      PathArc {
-        x: Global.panelRadius; y: Global.panelRadius
-        radiusX: Global.panelRadius; radiusY: Global.panelRadius
+      Repeater {
+        model: NotificationService.history
+        delegate: NotificationHistoryTile {}
       }
 
-      PathLine { x: Global.panelRadius; y: notifcenter.height - Global.panelRadius }
-
-      PathArc {
-        x: 0; y: notifcenter.height
-        radiusX: Global.panelRadius; radiusY: Global.panelRadius
+      Label {
+        visible: !NotificationService.hasHistory
+        Layout.fillWidth: true
+        Layout.topMargin: 40
+        horizontalAlignment: Text.AlignHCenter
+        text: "No notifications"
+        color: Theme.m3on_surface
+        font.pixelSize: 13
       }
-
-      PathLine { x: notifcenter.width; y: notifcenter.height }
-      PathLine { x: notifcenter.width; y: 0 }
     }
   }
 }

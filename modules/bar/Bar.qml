@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Wayland
 
 import qs.common
+import "../drawers/"
 
 PanelWindow {
   id: frame
@@ -13,6 +14,9 @@ PanelWindow {
   property real thickness: Global.border        // border stroke thickness
   property real radius: Global.borderRadius         // corner radius
   property color borderColor: Theme.m3surface
+  property bool clockHovered: clockHandler.hovered
+
+  readonly property bool controlCenterVisible: hotCornerArea.containsMouse
 
   anchors {
     top: true
@@ -24,9 +28,11 @@ PanelWindow {
     // marginRight: Global.pad
   }
 
-  exclusionMode: ExclusionMode.Ignore   // purely visual, reserves nothing
+  exclusionMode: ExclusionMode.Ignore
   aboveWindows: false
   color: "transparent"
+
+  WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.namespace: "frame"
 
   // click-through: nothing in this window should intercept input
@@ -43,6 +49,14 @@ PanelWindow {
       width: frame.width - outline.t * 2
       height: frame.height - outline.t - Global.reserveTop
       intersection: Intersection.Subtract
+    }
+
+    // hot corner region
+    Region {
+      x: frame.width - 20
+      y: frame.height - 20
+      width: 20
+      height: 20
     }
   }
 
@@ -90,7 +104,6 @@ PanelWindow {
     anchors.rightMargin: Global.pad
 
     height: Global.pillHeight
-    // height: Math.max(workspaces.implicitHeight, clock.implicitHeight, rightGroup.implicitHeight)
 
     Workspaces {
       id: workspaces
@@ -101,6 +114,10 @@ PanelWindow {
     Clock {
       id: clock
       anchors.centerIn: parent
+
+      HoverHandler {
+        id: clockHandler
+      }
     }
 
     RowLayout {
@@ -116,15 +133,27 @@ PanelWindow {
     }
   }
 
+  TopDrawer { 
+    screen: root.modelData
+    drawerHovered: clockHovered
+  }
+
   // hot corner
-  // Rectangle {
-  //   width: 20
-  //   height: 20
-  //   color: "white"
-  //
-  //   anchors {
-  //     bottom: parent.bottom
-  //     right: parent.right
-  //   }
-  // }
+  Rectangle {
+    width: 20
+    height: 20
+    color: "transparent"
+
+    anchors {
+      bottom: parent.bottom
+      right: parent.right
+    }
+
+    MouseArea {
+      id: hotCornerArea
+
+      anchors.fill: parent
+      hoverEnabled: true
+    }
+  }
 }

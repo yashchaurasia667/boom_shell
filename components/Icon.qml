@@ -2,7 +2,7 @@ import QtQuick
 import qs.common
 
 Text {
-  color: Theme.fg
+  color: Theme.m3primary
   font.family: Global.iconFont
   font.pixelSize: 16
 
