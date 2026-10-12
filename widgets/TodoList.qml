@@ -9,6 +9,7 @@ import QtQuick.Controls
 import QtCore 
 
 import qs.common
+import qs.components
 
 PanelWindow {
   id: root
