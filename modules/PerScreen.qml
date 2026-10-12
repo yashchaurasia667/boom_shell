@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 
 import qs.common
+import qs.widgets
 
 import "bar"
 import "notifications"
@@ -38,6 +39,7 @@ Scope {
     id: bar
     screen: root.modelData 
   }
+  DesktopClock {}
 
   NotificationToast {}
   QuickSliders {}
@@ -46,7 +48,5 @@ Scope {
     screen: root.modelData
     open: root.showNotifications
   }
-
-  AppLauncher {}
 }
 

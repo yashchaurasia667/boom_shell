@@ -4,6 +4,7 @@ import QtQuick
 
 import qs.components
 import qs.modules
+import qs.widgets
 import "modules/bar"
 
 ShellRoot {
@@ -13,5 +14,5 @@ ShellRoot {
     PerScreen {}
   }
   TodoList {}
-  // AppLauncher {}
+  AppLauncher {}
 }
