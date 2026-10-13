@@ -55,6 +55,7 @@ PanelWindow {
 
   function hide(): void {
     open = false
+    wallpaper.wallpapers = []
   }
 
   function toggle(): void {
@@ -252,7 +253,7 @@ PanelWindow {
             source: "file://" + cell.modelData
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
-            cache: true
+            cache: false
 
             Rectangle {
               anchors.fill: parent
