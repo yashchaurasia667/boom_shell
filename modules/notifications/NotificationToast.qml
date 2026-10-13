@@ -47,7 +47,6 @@ PanelWindow {
       startX: 0; startY: 0
       fillRule: ShapePath.OddEvenFill
       fillColor: Theme.m3surface
-      // fillColor: "white"
       strokeColor: "transparent"
 
       PathArc {
