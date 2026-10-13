@@ -57,7 +57,7 @@ Item {
         height: Global.pillHeight - 15
         implicitWidth: Global.pillHeight - 15
 
-        color: focused ? Theme.m3source_color: Theme.m3surface_variant
+        color: focused ? Theme.m3primary : Theme.m3surface_variant
         radius: focused ? wsTile.height/2 :  6
 
         // Behavior on color { ColorAnimation { duration: 150 } }
