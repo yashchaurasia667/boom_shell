@@ -6,6 +6,7 @@ import QtQuick
 import qs.components
 import qs.modules
 import qs.widgets
+
 import "modules/bar"
 
 ShellRoot {
@@ -44,4 +45,6 @@ ShellRoot {
       if (wallpaperLoader.active) wallpaperLoader.item.hide()
     }
   }
+
+  PowerMenu {}
 }
