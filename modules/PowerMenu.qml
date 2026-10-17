@@ -84,10 +84,10 @@ PanelWindow {
   Rectangle {
     anchors {
       fill: parent
-      topMargin: Global.pillHeight
-      leftMargin: Global.border
-      rightMargin: Global.border
-      bottomMargin: Global.border
+      // topMargin: Global.pillHeight
+      // leftMargin: Global.border
+      // rightMargin: Global.border
+      // bottomMargin: Global.border
     }
     radius: Global.borderRadius
     color: Qt.rgba(Theme.m3shadow.r, Theme.m3shadow.g, Theme.m3shadow.b, 0.3)
