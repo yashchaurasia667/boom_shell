@@ -1,5 +1,4 @@
 import QtQuick
-
 import qs.common
 
 Item {
@@ -15,24 +14,28 @@ Item {
 
   property string icon: ""
   signal iconClicked()
+  signal moved(real value)
 
   readonly property bool _horizontal: orientation === Slider.Horizontal
 
   implicitWidth: _horizontal ? 120 : 32
   implicitHeight: _horizontal ? 32 : 120
 
-  signal moved(real value)
+  Timer {
+    id: hideDelay
+    interval: Global.dur.slow
+  }
+
+  onValueChanged: hideDelay.restart()
 
   readonly property real _ratio: root.to > root.from
-    ? Math.max(0, Math.min(1, (root.value - root.from) / (root.to - root.from)))
-    : 0
+  ? Math.max(0, Math.min(1, (root.value - root.from) / (root.to - root.from)))
+  : 0
 
-  // takes a position along the slider's moving axis (x for horizontal, y for vertical)
-  // and converts it to a value — vertical is inverted since "up" should mean "more"
   function _setFromPos(pos: real): void {
     const size = root._horizontal ? track.width : track.height
     let ratio = Math.max(0, Math.min(1, pos / size))
-    if (!root._horizontal) ratio = 1 - ratio   // bottom = 0, top = 1
+    if (!root._horizontal) ratio = 1 - ratio
 
     const newValue = root.from + ratio * (root.to - root.from)
     root.value = newValue
@@ -51,7 +54,6 @@ Item {
       radius: track.radius
       color: Theme.m3primary
 
-      // horizontal: fills left-to-right, anchored to the left edge
       anchors.left: root._horizontal ? parent.left : undefined
       anchors.top: root._horizontal ? parent.top : undefined
       anchors.bottom: parent.bottom
@@ -63,19 +65,15 @@ Item {
 
     Icon {
       id: iconLabel
-      visible: root.icon !== "" && !root.pressed
+      visible: root.icon !== "" && !root.pressed && !hideDelay.running
       text: root.icon
       font.pixelSize: 16
       color: {
-        const fillExtent = root._horizontal
-          ? root._ratio * track.width
-          : root._ratio * track.height
+        const fillExtent = root._horizontal ? root._ratio * track.width : root._ratio * track.height
         const iconPos = root._horizontal ? width + 20 : height + 20
         return fillExtent > iconPos ? Theme.m3on_primary : Theme.m3on_surface
       }
 
-      // horizontal: pinned left-center. vertical: pinned bottom-center
-      // (bottom, since fill grows upward from the bottom in vertical mode)
       anchors.left: root._horizontal ? parent.left : undefined
       anchors.leftMargin: root._horizontal ? 10 : 0
       anchors.verticalCenter: root._horizontal ? parent.verticalCenter : undefined
@@ -83,13 +81,11 @@ Item {
       anchors.bottomMargin: root._horizontal ? 0 : 10
       anchors.horizontalCenter: root._horizontal ? undefined : parent.horizontalCenter
 
-      TapHandler {
-        onTapped: root.iconClicked()
-      }
+      TapHandler { onTapped: root.iconClicked() }
     }
 
     Label {
-      visible: root.pressed
+      visible: root.pressed || hideDelay.running
       text: Math.round(root._ratio * 100) + "%"
       font.bold: true
       font.pixelSize: 13
@@ -114,9 +110,9 @@ Item {
     DragHandler {
       id: dragHandler
       target: null
-      xAxis.minimum: root._horizontal ? 0 : 0
+      xAxis.minimum: 0
       xAxis.maximum: root._horizontal ? track.width : 0
-      yAxis.minimum: root._horizontal ? 0 : 0
+      yAxis.minimum: 0
       yAxis.maximum: root._horizontal ? 0 : track.height
 
       onCentroidChanged: {
