@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import Quickshell.Hyprland
 
 import qs.common
@@ -35,18 +36,19 @@ Item {
 
   height: Global.pillHeight
   Layout.alignment: Qt.AlignLeft
-  // Layout.leftMargin: Global.pad
 
   RowLayout {
     anchors.fill: parent
     spacing: 10
 
     Repeater {
-      model: {
-        const occupiedIds = Hyprland.workspaces.values
-          .filter(w => w.id > 0 && w.toplevels.values.length > 0)
-          .map(w => w.id)
-        return [...new Set([1, 2, 3, 4, ...occupiedIds])].sort((a, b) => a - b)
+      model: ScriptModel {
+        values: {
+          const occupiedIds = Hyprland.workspaces.values
+            .filter(w => w.id > 0 && w.toplevels.values.length > 0)
+            .map(w => w.id)
+          return [...new Set([1, 2, 3, 4, ...occupiedIds])].sort((a, b) => a - b)
+        }
       }
 
       delegate: Rectangle {
@@ -58,13 +60,10 @@ Item {
         implicitWidth: Global.pillHeight - 15
 
         color: focused ? Theme.m3primary : Theme.m3surface_variant
-        radius: focused ? wsTile.height/2 :  6
+        radius: focused ? wsTile.height / 2 : 6
 
-        // Behavior on color { ColorAnimation { duration: 150 } }
         Behavior on radius {
-          NumberAnimation {
-            duration: 150
-          }
+          Anim {}
         }
 
         Text {
@@ -81,7 +80,6 @@ Item {
           cursorShape: Qt.PointingHandCursor
           onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + modelData + " })")
         }
-
       }
     }
 
@@ -93,7 +91,10 @@ Item {
     }
 
     Repeater {
-      model: specialSlots
+      model: ScriptModel {
+        values: specialSlots
+        objectProp: "id"
+      }
 
       delegate: Rectangle {
         required property var modelData

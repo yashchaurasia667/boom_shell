@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Shapes
 
 import Quickshell
 import Quickshell.Wayland
@@ -14,9 +13,13 @@ PanelWindow {
   id: clipboard
 
   property bool open: false
+  property bool _ready: false
   property int panelWidth: 650
   property int panelHeight: 450
   property int maxResults: 500
+  signal dismissed()
+
+  Component.onCompleted: Qt.callLater(() => { clipboard._ready = true })
 
   anchors {
     top: true
@@ -32,14 +35,20 @@ PanelWindow {
 
   Timer {
     id: hideDelay
-    interval: 150
-    onTriggered: {}
+    interval: Global.dur.normal
+    onTriggered: {
+      if (!clipboard.open) {
+        ClipboardService.clear()
+        clipboard.dismissed()
+      }
+    }
   }
 
   onOpenChanged: {
     if (open) {
-      searchInput.forceActiveFocus()
+      hideDelay.stop()
       ClipboardService.refresh()
+      Qt.callLater(() => searchInput.forceActiveFocus())
     } else {
       hideDelay.restart()
     }
@@ -70,25 +79,10 @@ PanelWindow {
     hide()
   }
 
-  IpcHandler {
-    target: "clipboard"
-    function toggle(): void { clipboard.toggle() }
-    function show(): void { clipboard.show() }
-    function hide(): void { clipboard.hide() }
-  }
-
   // click-outside-to-close backdrop
   Rectangle {
-    anchors {
-      fill: parent
-      // topMargin: Global.pillHeight
-      // leftMargin: Global.border
-      // rightMargin: Global.border
-      // bottomMargin: Global.border
-    }
-
+    anchors.fill: parent
     color: "transparent"
-    // color: Qt.rgba(Theme.m3shadow.r, Theme.m3shadow.g, Theme.m3shadow.b, 0.3)
     radius: Global.borderRadius
 
     MouseArea {
@@ -105,14 +99,12 @@ PanelWindow {
       horizontalCenter: parent.horizontalCenter
     }
     width: clipboard.panelWidth
-    height: open ? clipboard.panelHeight : 0
+    height: (open && _ready) ? clipboard.panelHeight : 0
 
-    // radius: Global.panelRadius
     color: "transparent"
 
-    y: Global.pillHeight
     Behavior on height {
-      NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+      Anim {}
     }
 
     MouseArea {
@@ -120,48 +112,17 @@ PanelWindow {
       onClicked: {}
     }
 
-    Shape {
-      anchors.centerIn: parent
-      preferredRendererType: Shape.CurveRenderer
-
-      ShapePath {
-        startX: 0; startY: panelHeight
-        fillRule: ShapePath.OddEvenFill
-        fillColor: Theme.m3surface
-        strokeColor: "transparent"
-
-        PathArc {
-          x: Global.panelRadius; y: panelHeight - Global.panelRadius
-          radiusX: Global.panelRadius; radiusY: Global.panelRadius
-          direction: PathArc.Counterclockwise
-        }
-
-        PathLine { x: Global.panelRadius; y: Global.notchRadius }
-        PathArc {
-          x: Global.panelRadius + Global.notchRadius; y: 0
-          radiusX: Global.notchRadius; radiusY: Global.notchRadius
-          // direction: PathArc.Counterclockwise
-        }
-
-        PathLine { x: panelWidth - Global.panelRadius - Global.notchRadius; y: 0 }
-
-        PathArc {
-          x: panelWidth - Global.panelRadius; y: Global.notchRadius
-          radiusX: Global.notchRadius; radiusY: Global.notchRadius
-        }
-        PathLine { x: panelWidth - Global.panelRadius; y: panelHeight - Global.panelRadius }
-
-        PathArc {
-          x: panelWidth; y: panelHeight
-          radiusX: Global.panelRadius; radiusY: Global.panelRadius
-          direction: PathArc.Counterclockwise
-        }
-      }
+    NotchShape {
+      anchors.fill: parent
+      edge: "bottom"
     }
 
     ColumnLayout {
-      anchors.fill: parent
-      anchors.margins: Global.pad
+      width: clipboard.panelWidth - 2 * Global.pad
+      height: clipboard.panelHeight - 2 * Global.pad
+      anchors.top: parent.top
+      anchors.topMargin: Global.pad
+      anchors.horizontalCenter: parent.horizontalCenter
       spacing: Global.pad
 
       RowLayout {
@@ -182,8 +143,6 @@ PanelWindow {
           font.pixelSize: 18
           color: Theme.m3on_surface
           clip: true
-
-          onTextChanged: ClipboardService.filterText = text
 
           Keys.onPressed: (event) => {
             if (event.key === Qt.Key_Escape) {
@@ -232,13 +191,21 @@ PanelWindow {
         Layout.rightMargin: Global.panelRadius
 
         clip: true
+        cacheBuffer: 0
         model: ScriptModel {
           id: filteredEntries
           values: {
             const q = searchInput.text.trim().toLowerCase()
             const all = ClipboardService.entries
-            const matches = q === "" ? all : all.filter(e => e.preview.toLowerCase().includes(q))
-            return matches.slice(0, clipboard.maxResults)
+            if (q === "") return all.slice(0, clipboard.maxResults)
+            const matches = []
+            for (let i = 0; i < all.length; i++) {
+              if (all[i].preview.toLowerCase().includes(q)) {
+                matches.push(all[i])
+                if (matches.length >= clipboard.maxResults) break
+              }
+            }
+            return matches
           }
         }
 
@@ -254,7 +221,7 @@ PanelWindow {
 
           Component.onCompleted: {
             if (resultRow.modelData.isImage)
-            ClipboardService.ensureThumbnail(resultRow.modelData.id)
+              ClipboardService.ensureThumbnail(resultRow.modelData.id)
           }
 
           RowLayout {
@@ -268,6 +235,8 @@ PanelWindow {
               Layout.preferredHeight: 100
               fillMode: Image.PreserveAspectCrop
               asynchronous: true
+              cache: false
+              sourceSize: Qt.size(100, 100)
               source: resultRow.modelData.thumbPath ? "file://" + resultRow.modelData.thumbPath : ""
 
               Rectangle {
@@ -286,7 +255,7 @@ PanelWindow {
               font.pixelSize: 18
               font.weight: 450
               elide: Text.ElideRight
-              wrapMode: resultRow.modelData.isImage ? Text.NoWrap : Text.NoWrap
+              wrapMode: Text.NoWrap
             }
           }
 
@@ -297,9 +266,9 @@ PanelWindow {
             onEntered: listView.currentIndex = resultRow.index
             onClicked: mouse => {
               if (mouse.button === Qt.RightButton)
-              ClipboardService.remove(resultRow.modelData.preview)
+                ClipboardService.remove(resultRow.modelData.preview)
               else
-              clipboard.select(resultRow.modelData)
+                clipboard.select(resultRow.modelData)
             }
           }
         }

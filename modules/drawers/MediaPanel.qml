@@ -8,6 +8,9 @@ import qs.services
 ColumnLayout {
   spacing: 10
 
+  Component.onCompleted: MprisService.trackPosition = true
+  Component.onDestruction: MprisService.trackPosition = false
+
   RowLayout {
     Layout.fillWidth: true
     spacing: 12
@@ -23,6 +26,9 @@ ColumnLayout {
         anchors.fill: parent
         visible: MprisService.artUrl !== ""
         source: MprisService.artUrl
+        sourceSize: Qt.size(56, 56)
+        asynchronous: true
+        cache: false
         fillMode: Image.PreserveAspectCrop
       }
 

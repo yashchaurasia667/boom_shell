@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Shapes
 
 import Quickshell
 import Quickshell.Wayland
@@ -13,9 +12,13 @@ PanelWindow {
   id: launcher
 
   property bool open: false
+  property bool _ready: false
   property int launcherWidth: 800
   property int launcherHeight: 400
   property int maxResults: 10
+  signal dismissed()
+
+  Component.onCompleted: Qt.callLater(() => { launcher._ready = true })
 
   anchors {
     top: true
@@ -31,13 +34,19 @@ PanelWindow {
 
   Timer {
     id: hideDelay
-    interval: 150
-    onTriggered: {}
+    interval: Global.dur.normal
+    onTriggered: {
+      if (!launcher.open) launcher.dismissed()
+    }
   }
 
   onOpenChanged: {
-    if (open) searchInput.forceActiveFocus()
-    else hideDelay.restart()
+    if (open) {
+      hideDelay.stop()
+      Qt.callLater(() => searchInput.forceActiveFocus())
+    } else {
+      hideDelay.restart()
+    }
   }
 
   WlrLayershell.layer: WlrLayer.Overlay
@@ -72,13 +81,6 @@ PanelWindow {
     hide()
   }
 
-  IpcHandler {
-    target: "launcher"
-    function toggle(): void { launcher.toggle() }
-    function show(): void { launcher.show() }
-    function hide(): void { launcher.hide() }
-  }
-
   // click-outside-to-close backdrop
   Rectangle {
     anchors {
@@ -102,20 +104,17 @@ PanelWindow {
     id: panel
     clip: true
     anchors {
-      // top: parent.top
-      // topMargin: Global.pillHeight
+      top: parent.top
+      topMargin: Global.pillHeight
       horizontalCenter: parent.horizontalCenter
     }
     width: launcher.launcherWidth
-    height: open ? launcher.launcherHeight : 0
+    height: (open && _ready) ? launcher.launcherHeight : 0
 
-    radius: Global.panelRadius
     color: "transparent"
-    // color: Theme.m3surface
 
-    y: Global.pillHeight
     Behavior on height {
-      NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+      Anim {}
     }
 
     // swallow clicks so they don't fall through to the backdrop
@@ -124,49 +123,17 @@ PanelWindow {
       onClicked: {}
     }
 
-    Shape {
-      // anchors.fill: parent
-      anchors.centerIn: parent
-      preferredRendererType: Shape.CurveRenderer
-
-      ShapePath {
-        startX: 0; startY: 0
-        fillRule: ShapePath.OddEvenFill
-        fillColor: Theme.m3surface
-        strokeColor: "transparent"
-        // strokeWidth: 2
-
-        PathArc {
-          x: Global.panelRadius; y: Global.panelRadius
-          radiusX: Global.panelRadius; radiusY: Global.panelRadius
-        }
-
-        PathLine { x: Global.panelRadius; y: launcherHeight - Global.notchRadius }
-        PathArc {
-          x: Global.panelRadius + Global.notchRadius; y: launcherHeight
-          radiusX: Global.notchRadius; radiusY: Global.notchRadius
-          direction: PathArc.Counterclockwise
-        }
-
-        PathLine { x: launcherWidth - Global.panelRadius - Global.notchRadius; y: launcherHeight }
-
-        PathArc {
-          x: launcherWidth - Global.panelRadius; y: launcherHeight - Global.notchRadius
-          radiusX: Global.notchRadius; radiusY: Global.notchRadius
-          direction: PathArc.Counterclockwise
-        }
-        PathLine { x: launcherWidth - Global.panelRadius; y: Global.panelRadius }
-
-        PathArc {
-          x: launcherWidth; y: 0
-          radiusX: Global.panelRadius; radiusY: Global.panelRadius
-        }
-      }
+    NotchShape {
+      anchors.fill: parent
+      edge: "top"
     }
 
     ColumnLayout {
-      anchors.fill: parent
-      anchors.margins: Global.pad
+      width: launcher.launcherWidth - 2 * Global.pad
+      height: launcher.launcherHeight - 2 * Global.pad
+      anchors.bottom: parent.bottom
+      anchors.bottomMargin: Global.pad
+      anchors.horizontalCenter: parent.horizontalCenter
       spacing: Global.pad
 
       RowLayout {
@@ -231,19 +198,30 @@ PanelWindow {
         Layout.rightMargin: Global.panelRadius
 
         clip: true
+        cacheBuffer: 0
         model: ScriptModel {
           id: filteredApps
           values: {
-            const all = [...DesktopEntries.applications.values]
+            if (!launcher.open) return []
+            const all = DesktopEntries.applications.values
             const q = searchInput.text.trim().toLowerCase()
 
-            const matches = q === "" ? all : all.filter(entry => {
-              if (entry.name.toLowerCase().includes(q)) return true
-              if (entry.genericName.toLowerCase().includes(q)) return true
-              return entry.keywords.some(k => k.toLowerCase().includes(q))
-            })
+            if (q === "") {
+              return all.slice(0, launcher.maxResults)
+            }
 
-            return matches.slice(0, launcher.maxResults)
+            const matches = []
+            for (let i = 0; i < all.length; i++) {
+              const entry = all[i]
+              if (entry.name.toLowerCase().includes(q) ||
+                  entry.genericName.toLowerCase().includes(q) ||
+                  entry.keywords.some(k => k.toLowerCase().includes(q))) {
+                matches.push(entry)
+                if (matches.length >= launcher.maxResults) break
+              }
+            }
+
+            return matches
           }
         }
 
@@ -268,8 +246,10 @@ PanelWindow {
               Layout.preferredWidth: 40
               Layout.preferredHeight: 40
               source: Quickshell.iconPath(resultRow.modelData.icon, "application-x-executable")
+              sourceSize: Qt.size(40, 40)
               fillMode: Image.PreserveAspectFit
               asynchronous: true
+              cache: false
             }
 
             ColumnLayout {

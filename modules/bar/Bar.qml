@@ -12,20 +12,22 @@ PanelWindow {
   id: frame
 
   property real thickness: Global.border        // border stroke thickness
-  property real radius: Global.borderRadius         // corner radius
+  property real radius: Global.borderRadius     // corner radius
   property color borderColor: Theme.m3surface
   property bool clockHovered: clockHandler.hovered
 
   readonly property bool controlCenterVisible: hotCornerArea.containsMouse
+  readonly property bool slidersZoneHovered: slidersTriggerHandler.hovered
+
+  // Match QuickSliders dimensions for the right-edge trigger strip
+  readonly property int slidersTriggerWidth: Global.border + 4
+  readonly property int slidersTriggerHeight: 150 * 2 + 12 + 2 * (Global.pad + Global.panelRadius)
 
   anchors {
     top: true
     bottom: true
     left: true
     right: true
-
-    // leftMargin: Global.pad
-    // marginRight: Global.pad
   }
 
   exclusionMode: ExclusionMode.Ignore
@@ -35,7 +37,11 @@ PanelWindow {
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.namespace: "frame"
 
-  // click-through: nothing in this window should intercept input
+  onClockHoveredChanged: {
+    if (clockHovered) topDrawerLoader.active = true
+  }
+
+  // click-through: nothing in this window should intercept input except top bar, right slider zone, and hot corner
   mask: Region {
     // outer: whole window is "solid" (blocks input) by default
     x: 0; y: 0
@@ -49,6 +55,14 @@ PanelWindow {
       width: frame.width - outline.t * 2
       height: frame.height - outline.t - Global.reserveTop
       intersection: Intersection.Subtract
+    }
+
+    // right-edge quick sliders hover zone
+    Region {
+      x: frame.width - frame.slidersTriggerWidth
+      y: Math.round((frame.height - frame.slidersTriggerHeight) / 2)
+      width: frame.slidersTriggerWidth
+      height: frame.slidersTriggerHeight
     }
 
     // hot corner region
@@ -75,7 +89,7 @@ PanelWindow {
       fillRule: ShapePath.OddEvenFill
       fillColor: frame.borderColor
       strokeWidth: -1
-      //
+
       // outer rect (full window)
       startX: 0; startY: 0
       PathLine { x: outline.w; y: 0 }
@@ -133,9 +147,26 @@ PanelWindow {
     }
   }
 
-  TopDrawer { 
-    screen: root.modelData
-    drawerHovered: clockHovered
+  Loader {
+    id: topDrawerLoader
+    active: false
+    sourceComponent: TopDrawer {
+      screen: frame.screen
+      drawerHovered: frame.clockHovered
+      onDismissed: topDrawerLoader.active = false
+    }
+  }
+
+  // right-edge trigger zone for QuickSliders
+  Item {
+    width: frame.slidersTriggerWidth
+    height: frame.slidersTriggerHeight
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+
+    HoverHandler {
+      id: slidersTriggerHandler
+    }
   }
 
   // hot corner

@@ -6,7 +6,7 @@ import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
-import QtCore 
+import QtCore
 
 import qs.common
 import qs.components
@@ -28,19 +28,18 @@ PanelWindow {
 
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
   BackgroundEffect.blurRegion: Region {
-    // item: clippingRect
     x: clippingRect.x
     y: clippingRect.y
     width: clippingRect.width
     height: clippingRect.height
     radius: clippingRect.radius
   }
-  
-  // Persistent Storage configuration
+
+  // Persistent Storage configuration (explicit location avoids QSettings missing organizationName warning)
   Settings {
     id: settings
+    location: "file://" + Quickshell.env("HOME") + "/.config/quickshell/todo-list.conf"
     category: "TodoList"
-    // fileName: StandardPaths.writableLocation(StandardPaths.ConfigLocation) + "/quickshell/todo-list.conf"
     property string savedTasks: "[]"
   }
 
@@ -92,6 +91,8 @@ PanelWindow {
         TextField {
           id: taskInput
           Layout.fillWidth: true
+          font.family: compFont
+          font.pixelSize: 13
 
           placeholderText: "Add a new task.."
           placeholderTextColor: Theme.m3primary
@@ -115,6 +116,7 @@ PanelWindow {
 
           contentItem: Text {
             text: parent.text
+            font.family: compFont
             color: Theme.m3inverse_on_surface
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
@@ -150,10 +152,11 @@ PanelWindow {
 
           RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: Global.pad/2
-            
+            anchors.leftMargin: Global.pad / 2
+
             CheckBox {
               checked: isCompleted
+              font.family: compFont
               onToggled: {
                 todoModel.setProperty(index, "isCompleted", checked)
                 root.saveTasks() // Save on toggle
@@ -179,6 +182,7 @@ PanelWindow {
 
               contentItem: Text {
                 text: "✕"
+                font.family: compFont
                 color: Theme.m3error
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter

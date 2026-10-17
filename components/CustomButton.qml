@@ -41,7 +41,7 @@ Button {
     border.color: root.borderColor
 
     Behavior on color {
-      ColorAnimation { duration: 120 }
+      ColorAnimation { duration: Global.dur.fast }
     }
   }
 
@@ -49,9 +49,6 @@ Button {
   transformOrigin: Item.Center
 
   Behavior on scale {
-    NumberAnimation {
-      duration: 120
-      easing.type: Easing.OutCubic
-    }
+    Anim {}
   }
 }

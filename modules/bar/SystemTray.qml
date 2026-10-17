@@ -17,9 +17,9 @@ Item {
     SystemTray.items.values.length * iconSize +
     Math.max(0, SystemTray.items.values.length - 1) * iconSpacing
 
-  // Let the internal Row dictate our width automatically. 
+  // Let the internal Row dictate our width automatically.
   // Added + 16 here to give a nice 8px padding on both left and right sides.
-  implicitWidth: contentRow.width + 16 
+  implicitWidth: contentRow.width + 16
   implicitHeight: Global.pillHeight - 12
   Layout.fillWidth: true
 
@@ -36,18 +36,19 @@ Item {
     spacing: root.expanded ? root.iconSpacing : 0
 
     Behavior on spacing {
-      NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+      Anim {}
     }
 
     Item {
       id: trayContainer
       clip: true
+      visible: width > 0
       width: root.expanded ? root.trayContentWidth : 0
       height: root.iconSize
       anchors.verticalCenter: parent.verticalCenter
 
       Behavior on width {
-        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        Anim {}
       }
 
       RowLayout {
@@ -69,6 +70,8 @@ Item {
             Image {
               anchors.fill: parent
               source: trayIcon.modelData.icon
+              sourceSize: Qt.size(root.iconSize, root.iconSize)
+              asynchronous: true
               fillMode: Image.PreserveAspectFit
             }
 

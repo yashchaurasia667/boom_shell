@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
 
@@ -12,11 +13,11 @@ PanelWindow {
 
   anchors {
     left: true
-    // margins: panelMargins
-    // verticalCenter: true
   }
   exclusionMode: ExclusionMode.Ignore
   aboveWindows: false
+  WlrLayershell.layer: WlrLayer.Bottom
+  mask: Region {}
 
   implicitWidth: 400
   implicitHeight: 450

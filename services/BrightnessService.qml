@@ -21,8 +21,9 @@ Singleton {
     setProcess.running = true
   }
 
+  // Fallback slow poll for drivers that don't emit inotify on sysfs brightness
   Timer {
-    interval: 500
+    interval: 2000
     running: root.ready
     repeat: true
     triggeredOnStart: false
@@ -41,12 +42,12 @@ Singleton {
   FileView {
     id: currentFile
     path: "/sys/class/backlight/" + root._device + "/brightness"
+    watchChanges: true
+    onFileChanged: reload()
     onLoaded: {
       if (root.maxBrightness > 0) {
         const current = parseInt(text().trim())
         const newBrightness = current / root.maxBrightness
-        // avoid pointlessly reassigning on every poll tick when nothing changed —
-        // keeps slider bindings from re-evaluating 2x/sec for no reason
         if (Math.abs(newBrightness - root.brightness) > 0.001) {
           root.brightness = newBrightness
         }

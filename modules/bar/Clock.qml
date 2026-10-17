@@ -23,7 +23,6 @@ Item {
 
     Label {
       text: Qt.formatDateTime(clock.date, "HH:mm")
-      // color: Theme.m3on_surface
       font.bold: true
       font.pixelSize: 16
     }

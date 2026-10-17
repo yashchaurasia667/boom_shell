@@ -9,14 +9,16 @@ Singleton {
   property var entries: []   // list of {id, preview, isImage, thumbPath}
   property string filterText: ""
 
-  readonly property var filteredEntries: filterText.length === 0
-  ? entries
-  : entries.filter(e => e.preview.toLowerCase().includes(filterText.toLowerCase()))
-
   readonly property string cacheDir: "/tmp/qs-cliphist-cache"
 
   function refresh() {
     listProc.running = true
+  }
+
+  function clear() {
+    thumbQueue = []
+    entries = []
+    filterText = ""
   }
 
   function select(id) {
@@ -34,6 +36,7 @@ Singleton {
     const idx = entries.findIndex(e => e.id === id)
     if (idx === -1) return
     if (entries[idx].thumbPath || !entries[idx].isImage) return
+    if (thumbQueue.includes(id) || (thumbProc.running && thumbProc.entryId === id)) return
 
     thumbQueue.push(id)
     if (!thumbProc.running) processThumbQueue()
@@ -81,7 +84,7 @@ Singleton {
   Process {
     id: thumbProc
     property string entryId: ""
-    command: ["bash", "-c", `cliphist decode ${entryId} > ${root.cacheDir}/${entryId}.img`]
+    command: ["sh", "-c", `[ -s "${root.cacheDir}/${entryId}.img" ] || cliphist decode "${entryId}" > "${root.cacheDir}/${entryId}.img"`]
     onRunningChanged: {
       if (!running) {
         const idx = root.entries.findIndex(e => e.id === entryId)
@@ -104,7 +107,7 @@ Singleton {
   Process {
     id: copyProc
     property string entryId: ""
-    command: ["bash", "-c", `cliphist decode ${entryId} | wl-copy`]
+    command: ["sh", "-c", `cliphist decode "${entryId}" | wl-copy`]
   }
 
   Process {

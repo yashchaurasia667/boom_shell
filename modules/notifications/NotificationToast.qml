@@ -22,7 +22,6 @@ PanelWindow {
 
   margins {
     top: Global.pillHeight
-    // bottom: Global.panelRadius
   }
 
   exclusionMode: ExclusionMode.Ignore
@@ -31,54 +30,68 @@ PanelWindow {
 
   color: "transparent"
   implicitWidth: toastWidth + Global.panelRadius + Global.pad
-  implicitHeight: column.implicitHeight === 0 ? 0 : column.implicitHeight + Global.panelRadius + Global.pad
+  // Extra vertical headroom so elastic height overshoot is never clipped by the window
+  implicitHeight: Math.max(1, column.implicitHeight + Global.panelRadius + Global.pad + 60)
 
   // click-through everywhere except where toasts actually are
   mask: Region {
-    item: column
+    item: frameItem
   }
 
-  // framed shape
-  Shape {
-    anchors.fill: parent
-    preferredRendererType: Shape.CurveRenderer
-
-    ShapePath {
-      startX: 0; startY: 0
-      fillRule: ShapePath.OddEvenFill
-      fillColor: Theme.m3surface
-      strokeColor: "transparent"
-
-      PathArc {
-        x: Global.panelRadius; y: Global.panelRadius
-        radiusX: Global.panelRadius; radiusY: Global.panelRadius
-      }
-      PathLine { x: Global.panelRadius; y: popup.height - 2*Global.panelRadius }
-      PathArc {
-        x: 2 * Global.panelRadius; y: popup.height-Global.panelRadius
-        radiusX: Global.panelRadius; radiusY: Global.panelRadius
-        direction: PathArc.Counterclockwise
-      }
-      PathLine { x: popup.width - Global.panelRadius; y: popup.height-Global.panelRadius }
-      PathArc {
-        x: popup.width; y: popup.height
-        radiusX: Global.panelRadius; radiusY: Global.panelRadius
-      }
-      PathLine { x: popup.width; y: 0 }
-    }
-  }
-
-  ColumnLayout {
-    id: column
-    width: popup.toastWidth
-    anchors.right: parent.right
+  Item {
+    id: frameItem
     anchors.top: parent.top
-    spacing: 8
+    anchors.right: parent.right
+    width: popup.implicitWidth
+    height: column.implicitHeight <= 0 ? 0 : column.implicitHeight + Global.panelRadius + Global.pad
 
-    Repeater {
-      model: NotificationService.notifications
+    // framed shape
+    Shape {
+      id: toastShape
+      anchors.fill: parent
+      preferredRendererType: Shape.CurveRenderer
 
-      delegate: NotificationTile {}
+      readonly property real _w: Math.max(0, frameItem.width)
+      readonly property real _h: Math.max(0, frameItem.height)
+      readonly property real _r: Math.min(Global.panelRadius, _w / 3, _h / 2)
+
+      ShapePath {
+        startX: 0; startY: 0
+        fillRule: ShapePath.OddEvenFill
+        fillColor: Theme.m3surface
+        strokeColor: "transparent"
+
+        PathArc {
+          x: toastShape._r; y: toastShape._r
+          radiusX: toastShape._r; radiusY: toastShape._r
+        }
+        PathLine { x: toastShape._r; y: toastShape._h - 2 * toastShape._r }
+        PathArc {
+          x: 2 * toastShape._r; y: toastShape._h - toastShape._r
+          radiusX: toastShape._r; radiusY: toastShape._r
+          direction: PathArc.Counterclockwise
+        }
+        PathLine { x: toastShape._w - toastShape._r; y: toastShape._h - toastShape._r }
+        PathArc {
+          x: toastShape._w; y: toastShape._h
+          radiusX: toastShape._r; radiusY: toastShape._r
+        }
+        PathLine { x: toastShape._w; y: 0 }
+      }
+    }
+
+    ColumnLayout {
+      id: column
+      width: popup.toastWidth
+      anchors.right: parent.right
+      anchors.top: parent.top
+      spacing: 8
+
+      Repeater {
+        model: NotificationService.notifications
+
+        delegate: NotificationTile {}
+      }
     }
   }
 }

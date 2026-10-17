@@ -27,6 +27,9 @@ Rectangle {
     Image {
       visible: tile.modelData.image !== ""
       source: tile.modelData.image
+      sourceSize: Qt.size(36, 36)
+      asynchronous: true
+      cache: false
       Layout.preferredWidth: 36
       Layout.preferredHeight: 36
       fillMode: Image.PreserveAspectCrop
@@ -41,7 +44,6 @@ Rectangle {
 
     ColumnLayout {
       Layout.fillWidth: true
-      // anchors {}
       spacing: 2
 
       Label {

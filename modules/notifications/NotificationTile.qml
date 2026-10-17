@@ -7,58 +7,35 @@ import qs.common
 import qs.components
 import qs.services
 
-Rectangle {
-  id: toast
+Item {
+  id: toastWrapper
   required property Notification modelData
 
-  // true only when the slide-out was triggered by a manual click (not auto-expire) —
-  // gates whether exitAnim's onFinished should also tell the service to dismiss.
+  // true only when the collapse was triggered by a manual click (not auto-expire) —
+  // gates whether exit animation finish should also tell the service to dismiss.
   property bool manualDismissPending: false
+  property bool expanded: false
+  readonly property real targetHeight: content.implicitHeight + 24
 
   Layout.fillWidth: true
-  implicitHeight: content.implicitHeight + 24
-  radius: 12
-  color: Theme.m3surface
-  border.color: Theme.m3surface_variant
-  border.width: 1
+  implicitHeight: expanded ? targetHeight : 0
+  clip: true
 
-  // entry: slide in from the right
-  transform: Translate {
-    id: entryTransform
-    y: -toast.height - 20
-  }
+  Component.onCompleted: Qt.callLater(() => { toastWrapper.expanded = true })
 
-  Component.onCompleted: entryAnim.start()
-
-  NumberAnimation {
-    id: entryAnim
-    target: entryTransform
-    property: "y"
-    to: 0 
-    duration: 200
-    easing.type: Easing.OutCubic
-  }
-
-  // exit: slide out to the right
-  NumberAnimation {
-    id: exitAnim
-    target: toast
-    property: "x"
-    to: toast.width + 40
-    duration: NotificationService.exitAnimDuration
-    easing.type: Easing.InCubic
-    onFinished: {
-      if (toast.manualDismissPending) {
-        NotificationService.dismiss(toast.modelData)
+  Behavior on implicitHeight {
+    Anim {
+      onRunningChanged: {
+        if (!running && !toastWrapper.expanded && toastWrapper.manualDismissPending) {
+          NotificationService.dismiss(toastWrapper.modelData)
+        }
       }
-      // if not manual, the service's own grace timer is already running
-      // and will call expire() on its own — nothing more to do here.
     }
   }
 
   function requestDismiss(): void {
-    toast.manualDismissPending = true
-    exitAnim.start()
+    toastWrapper.manualDismissPending = true
+    toastWrapper.expanded = false
   }
 
   // catches this notification's own auto-expire warning and animates it out,
@@ -66,113 +43,128 @@ Rectangle {
   Connections {
     target: NotificationService
     function onExpiring(notification) {
-      if (notification === toast.modelData) {
-        exitAnim.start()
+      if (notification === toastWrapper.modelData) {
+        toastWrapper.expanded = false
       }
     }
   }
 
-  MouseArea {
-    anchors.fill: parent
-    acceptedButtons: Qt.LeftButton | Qt.RightButton
-    onClicked: (mouse) => {
-      if (mouse.button === Qt.RightButton) {
-        toast.requestDismiss()
-      }
-    }
-    onEntered: dismissBtn.visible = true
-    onExited: dismissBtn.visible = false
-    hoverEnabled: true
-  }
-
-  RowLayout {
-    id: content
+  Rectangle {
+    id: toast
     anchors.left: parent.left
     anchors.right: parent.right
-    anchors.verticalCenter: parent.verticalCenter
-    anchors.margins: 12
-    spacing: 10
+    anchors.bottom: parent.bottom
+    height: toastWrapper.targetHeight
+    radius: 12
+    color: Theme.m3surface
+    border.color: Theme.m3surface_variant
+    border.width: 1
 
-    Image {
-      visible: toast.modelData.image !== ""
-      source: toast.modelData.image
-      Layout.preferredWidth: 36
-      Layout.preferredHeight: 36
-      fillMode: Image.PreserveAspectCrop
+    MouseArea {
+      anchors.fill: parent
+      acceptedButtons: Qt.LeftButton | Qt.RightButton
+      onClicked: (mouse) => {
+        if (mouse.button === Qt.RightButton) {
+          toastWrapper.requestDismiss()
+        }
+      }
+      onEntered: dismissBtn.visible = true
+      onExited: dismissBtn.visible = false
+      hoverEnabled: true
     }
 
-    Icon {
-      visible: toast.modelData.image === "" && toast.modelData.appIcon !== ""
-      text: "notifications"
-      font.pixelSize: 20
-      color: Theme.m3primary
-    }
+    RowLayout {
+      id: content
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.margins: 12
+      spacing: 10
 
-    ColumnLayout {
-      Layout.fillWidth: true
-      spacing: 2
-
-      Label {
-        Layout.fillWidth: true
-        text: toast.modelData.summary
-        font.bold: true
-        font.pixelSize: 14
-        elide: Text.ElideRight
+      Image {
+        visible: toastWrapper.modelData.image !== ""
+        source: toastWrapper.modelData.image
+        sourceSize: Qt.size(36, 36)
+        asynchronous: true
+        cache: false
+        Layout.preferredWidth: 36
+        Layout.preferredHeight: 36
+        fillMode: Image.PreserveAspectCrop
       }
 
-      Label {
-        Layout.fillWidth: true
-        visible: toast.modelData.body !== ""
-        text: toast.modelData.body
-        font.pixelSize: 12
-        color: Theme.m3on_surface
-        wrapMode: Text.WordWrap
-        maximumLineCount: 3
-        elide: Text.ElideRight
+      Icon {
+        visible: toastWrapper.modelData.image === "" && toastWrapper.modelData.appIcon !== ""
+        text: "notifications"
+        font.pixelSize: 20
+        color: Theme.m3primary
       }
 
-      RowLayout {
-        visible: toast.modelData.actions.length > 0
-        spacing: 6
-        Layout.topMargin: 4
+      ColumnLayout {
+        Layout.fillWidth: true
+        spacing: 2
 
-        Repeater {
-          model: toast.modelData.actions
+        Label {
+          Layout.fillWidth: true
+          text: toastWrapper.modelData.summary
+          font.bold: true
+          font.pixelSize: 14
+          elide: Text.ElideRight
+        }
 
-          delegate: Rectangle {
-            required property NotificationAction modelData
+        Label {
+          Layout.fillWidth: true
+          visible: toastWrapper.modelData.body !== ""
+          text: toastWrapper.modelData.body
+          font.pixelSize: 12
+          color: Theme.m3on_surface
+          wrapMode: Text.WordWrap
+          maximumLineCount: 3
+          elide: Text.ElideRight
+        }
 
-            implicitWidth: actionLabel.implicitWidth + 16
-            implicitHeight: actionLabel.implicitHeight + 8
-            radius: 6
-            color: Theme.m3surface_variant
+        RowLayout {
+          visible: toastWrapper.modelData.actions.length > 0
+          spacing: 6
+          Layout.topMargin: 4
 
-            Label {
-              id: actionLabel
-              anchors.centerIn: parent
-              text: parent.modelData.text
-              font.pixelSize: 12
-            }
+          Repeater {
+            model: toastWrapper.modelData.actions
 
-            MouseArea {
-              anchors.fill: parent
-              onClicked: parent.modelData.invoke()
+            delegate: Rectangle {
+              required property NotificationAction modelData
+
+              implicitWidth: actionLabel.implicitWidth + 16
+              implicitHeight: actionLabel.implicitHeight + 8
+              radius: 6
+              color: Theme.m3surface_variant
+
+              Label {
+                id: actionLabel
+                anchors.centerIn: parent
+                text: parent.modelData.text
+                font.pixelSize: 12
+              }
+
+              MouseArea {
+                anchors.fill: parent
+                onClicked: parent.modelData.invoke()
+              }
             }
           }
         }
       }
-    }
 
-    Icon {
-      id: dismissBtn
-      visible: false
-      text: "close"
-      font.pixelSize: 14
-      color: Theme.m3error
+      Icon {
+        id: dismissBtn
+        visible: false
+        text: "close"
+        font.pixelSize: 14
+        color: Theme.m3error
 
-      MouseArea {
-        anchors.fill: parent
-        onClicked: toast.requestDismiss()
+        MouseArea {
+          anchors.fill: parent
+          onClicked: toastWrapper.requestDismiss()
+        }
       }
     }
   }

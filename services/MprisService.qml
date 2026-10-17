@@ -7,12 +7,21 @@ import Quickshell.Services.Mpris
 Singleton {
   id: root
 
+  // Only poll playback position when MediaPanel is actually open/visible
+  property bool trackPosition: false
+
+  onTrackPositionChanged: {
+    if (trackPosition && activePlayer) {
+      positionTick++
+    }
+  }
+
   // prefer a currently-playing player; fall back to the first available one
   readonly property MprisPlayer activePlayer: {
     for (const p of Mpris.players.values) {
       if (p.playbackState === MprisPlaybackState.Playing) return p
     }
-    return Mpris.players.count > 0 ? Mpris.players.values[0] : null
+    return Mpris.players.values.length > 0 ? Mpris.players.values[0] : null
   }
 
   readonly property bool hasPlayer: activePlayer !== null
@@ -33,14 +42,13 @@ Singleton {
     if (activePlayer && activePlayer.canSeek) activePlayer.position = seconds
   }
 
-  // position often doesn't update reactively per the docs — poll while playing
+  // position often doesn't update reactively per the docs — poll only while playing AND visible
   Timer {
     interval: 1000
-    running: root.playing
+    running: root.playing && root.trackPosition
     repeat: true
     onTriggered: {
       if (root.activePlayer) {
-        // re-reading position forces a refresh per docs' note on this property
         root.positionTick++
       }
     }

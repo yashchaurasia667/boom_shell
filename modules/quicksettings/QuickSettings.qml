@@ -169,7 +169,7 @@ ColumnLayout {
     Slider {
       Layout.fillWidth: true
       from: 0; to: 1
-      icon: "brightness_6"
+      icon: "brightness_7"
       value: BrightnessService.brightness
       onMoved: BrightnessService.setBrightness(value)
     }

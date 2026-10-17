@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Shapes
 
 import Quickshell
 import Quickshell.Wayland
@@ -13,11 +12,15 @@ PanelWindow {
   id: wallpaper
 
   property bool open: false
+  property bool _ready: false
   property int panelWidth: 1290
   property int panelHeight: 650
   property string wallpaperDir: Quickshell.env("HOME") + "/Pictures/wall"
   property var wallpapers: []
   property bool applying: false
+  signal dismissed()
+
+  Component.onCompleted: Qt.callLater(() => { wallpaper._ready = true })
 
   anchors {
     top: true
@@ -33,13 +36,20 @@ PanelWindow {
 
   Timer {
     id: hideDelay
-    interval: 150
-    onTriggered: wallpaper.closed()
+    interval: Global.dur.normal
+    onTriggered: {
+      if (!wallpaper.open) {
+        wallpaper.wallpapers = []
+        wallpaper.dismissed()
+      }
+    }
   }
 
   onOpenChanged: {
     if (open) {
+      hideDelay.stop()
       refresh()
+      Qt.callLater(() => panel.forceActiveFocus())
     } else {
       hideDelay.restart()
     }
@@ -55,7 +65,6 @@ PanelWindow {
 
   function hide(): void {
     open = false
-    wallpaper.wallpapers = []
   }
 
   function toggle(): void {
@@ -75,17 +84,10 @@ PanelWindow {
     swwwProc.running = true
   }
 
-  // IpcHandler {
-  //   target: "wallpaper"
-  //   function toggle(): void { wallpaper.toggle() }
-  //   function show(): void { wallpaper.show() }
-  //   function hide(): void { wallpaper.hide() }
-  // }
-
   // list wallpaper files in the directory
   Process {
     id: listProc
-    command: ["bash", "-c", `find "${wallpaper.wallpaperDir}" -type f \\( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" \\) | sort`]
+    command: ["sh", "-c", `find "${wallpaper.wallpaperDir}" -type f \\( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" \\) | sort`]
     stdout: StdioCollector {
       onStreamFinished: {
         wallpaper.wallpapers = text.split("\n").filter(l => l.length > 0)
@@ -131,66 +133,38 @@ PanelWindow {
   Rectangle {
     id: panel
     clip: true
+    focus: wallpaper.open
     anchors {
       bottom: parent.bottom
       horizontalCenter: parent.horizontalCenter
     }
     width: wallpaper.panelWidth
-    height: open ? wallpaper.panelHeight : 0
+    height: (open && _ready) ? wallpaper.panelHeight : 0
 
     color: "transparent"
 
-    y: Global.pillHeight
     Behavior on height {
-      NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+      Anim {}
     }
+
+    Keys.onEscapePressed: wallpaper.hide()
 
     MouseArea {
       anchors.fill: parent
       onClicked: {}
     }
 
-    Shape {
-      anchors.centerIn: parent
-      preferredRendererType: Shape.CurveRenderer
-
-      ShapePath {
-        startX: 0; startY: panelHeight
-        fillRule: ShapePath.OddEvenFill
-        fillColor: Theme.m3surface
-        strokeColor: "transparent"
-
-        PathArc {
-          x: Global.panelRadius; y: panelHeight - Global.panelRadius
-          radiusX: Global.panelRadius; radiusY: Global.panelRadius
-          direction: PathArc.Counterclockwise
-        }
-
-        PathLine { x: Global.panelRadius; y: Global.notchRadius }
-        PathArc {
-          x: Global.panelRadius + Global.notchRadius; y: 0
-          radiusX: Global.notchRadius; radiusY: Global.notchRadius
-        }
-
-        PathLine { x: panelWidth - Global.panelRadius - Global.notchRadius; y: 0 }
-
-        PathArc {
-          x: panelWidth - Global.panelRadius; y: Global.notchRadius
-          radiusX: Global.notchRadius; radiusY: Global.notchRadius
-        }
-        PathLine { x: panelWidth - Global.panelRadius; y: panelHeight - Global.panelRadius }
-
-        PathArc {
-          x: panelWidth; y: panelHeight
-          radiusX: Global.panelRadius; radiusY: Global.panelRadius
-          direction: PathArc.Counterclockwise
-        }
-      }
+    NotchShape {
+      anchors.fill: parent
+      edge: "bottom"
     }
 
     ColumnLayout {
-      anchors.fill: parent
-      anchors.margins: Global.pad
+      width: wallpaper.panelWidth - 2 * Global.pad
+      height: wallpaper.panelHeight - 2 * Global.pad
+      anchors.top: parent.top
+      anchors.topMargin: Global.pad
+      anchors.horizontalCenter: parent.horizontalCenter
       spacing: Global.pad
 
       RowLayout {
@@ -232,6 +206,7 @@ PanelWindow {
         clip: true
         cellWidth: 300
         cellHeight: 193
+        cacheBuffer: 0
         model: wallpaper.wallpapers
 
         delegate: Rectangle {
@@ -251,6 +226,7 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: 2
             source: "file://" + cell.modelData
+            sourceSize: Qt.size(cell.width - 4, cell.height - 4)
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
             cache: false

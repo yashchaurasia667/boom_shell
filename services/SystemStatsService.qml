@@ -7,6 +7,10 @@ import Quickshell.Io
 Singleton {
   id: root
 
+  // Opt-in flags for unused stats so we don't spawn nvidia-smi or parse /proc/meminfo every 2s at idle
+  property bool pollRam: false
+  property bool pollGpu: false
+
   // --- CPU ---
   readonly property real cpuUsage: _cpuUsage    // 0.0–100.0
   readonly property real cpuTemp: _cpuTemp      // °C
@@ -38,9 +42,9 @@ Singleton {
     triggeredOnStart: true
     onTriggered: {
       statFile.reload()
-      meminfoFile.reload()
       cpuTempFile.reload()
-      gpuProcess.running = true
+      if (root.pollRam) meminfoFile.reload()
+      if (root.pollGpu) gpuProcess.running = true
     }
   }
 
@@ -58,7 +62,11 @@ Singleton {
       const deltaTotal = total - root._prevTotal
 
       if (root._prevTotal > 0 && deltaTotal > 0) {
-        root._cpuUsage = (1 - deltaIdle / deltaTotal) * 100
+        const nextUsage = Math.round((1 - deltaIdle / deltaTotal) * 100)
+        // Only assign when the integer percentage changes to avoid unnecessary bar repaints
+        if (nextUsage !== root._cpuUsage) {
+          root._cpuUsage = nextUsage
+        }
       }
 
       root._prevIdle = idle
@@ -66,11 +74,12 @@ Singleton {
     }
   }
 
-  // /proc/meminfo — RAM usage
+  // /proc/meminfo — RAM usage (polled only when pollRam is true)
   FileView {
     id: meminfoFile
     path: "/proc/meminfo"
     onLoaded: {
+      if (!root.pollRam) return
       const lines = text().split("\n")
       const get = (key) => {
         const line = lines.find(l => l.startsWith(key))
@@ -87,7 +96,7 @@ Singleton {
     }
   }
 
-  // nvidia-smi — GPU usage + temp
+  // nvidia-smi — GPU usage + temp (polled only when pollGpu is true)
   Process {
     id: gpuProcess
     command: ["nvidia-smi", "--query-gpu=utilization.gpu,temperature.gpu", "--format=csv,noheader,nounits"]
@@ -102,13 +111,18 @@ Singleton {
     }
   }
 
-  // CPU temp — adjust hwmon path for your sensor (see note below)
+  // CPU temp — adjust hwmon path for your sensor
   FileView {
     id: cpuTempFile
-    path: "/sys/class/hwmon/hwmon5/temp1_input" // CHECK THIS PATH, see note
+    path: "/sys/class/hwmon/hwmon5/temp1_input"
     onLoaded: {
       const milliC = parseInt(text().trim())
-      if (!isNaN(milliC)) root._cpuTemp = milliC / 1000
+      if (!isNaN(milliC)) {
+        const nextTemp = Math.round(milliC / 1000)
+        if (nextTemp !== root._cpuTemp) {
+          root._cpuTemp = nextTemp
+        }
+      }
     }
   }
 }

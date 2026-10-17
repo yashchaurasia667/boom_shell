@@ -4,16 +4,18 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.Notifications
 
+import qs.common
+
 Singleton {
   id: root
 
   readonly property alias notifications: server.trackedNotifications
-  readonly property int count: notifications.count === undefined ? 0 : notifications.count
+  readonly property int count: notifications.values.length
   readonly property bool hasNotifications: count > 0
 
   property bool doNotDisturb: false
   property int defaultTimeout: 5000
-  property int exitAnimDuration: 150
+  property int exitAnimDuration: Global.dur.normal
 
   // persistent history — independent of trackedNotifications, survives dismissal/expiry
   property var history: []
@@ -93,11 +95,13 @@ Singleton {
       running: true
       repeat: false
       onTriggered: {
-        root.expiring(timer.notification)
-        graceTimer.createObject(root, {
-          notification: timer.notification,
-          interval: root.exitAnimDuration
-        })
+        if (timer.notification && root.notifications.values.includes(timer.notification)) {
+          root.expiring(timer.notification)
+          graceTimer.createObject(root, {
+            notification: timer.notification,
+            interval: root.exitAnimDuration
+          })
+        }
         timer.destroy()
       }
     }
@@ -111,7 +115,9 @@ Singleton {
       running: true
       repeat: false
       onTriggered: {
-        gtimer.notification.expire()
+        if (gtimer.notification && root.notifications.values.includes(gtimer.notification)) {
+          gtimer.notification.expire()
+        }
         gtimer.destroy()
       }
     }

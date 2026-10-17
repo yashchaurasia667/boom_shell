@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Shapes
 import QtQuick.Layouts
 
 import Quickshell
@@ -14,7 +13,11 @@ PanelWindow {
 
   property int drawerWidth: 800
   property int drawerHeight: 350
-  property bool drawerHovered: true
+  property bool drawerHovered: false
+  property bool _ready: false
+  signal dismissed()
+
+  Component.onCompleted: Qt.callLater(() => { drawer._ready = true })
 
   anchors {
     top: true
@@ -27,14 +30,18 @@ PanelWindow {
   exclusionMode: ExclusionMode.Ignore
   aboveWindows: false
   color: "transparent"
-  implicitHeight: drawerHeight
+  // Extra headroom so the elastic spring overshoot on height is never clipped by the window
+  implicitHeight: drawerHeight + 100
 
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.namespace: "media-drawer"
 
-  onDrawerHoveredChanged: {
-    if (drawerHovered) {
+  readonly property bool anyHovered: drawerHovered || panelHoverHandler.hovered
+
+  onAnyHoveredChanged: {
+    if (anyHovered) {
       hideTimer.stop()
+      closeDelay.stop()
     } else {
       hideTimer.restart()
     }
@@ -43,79 +50,55 @@ PanelWindow {
   Timer {
     id: hideTimer
     interval: 250
-    onTriggered: {}
+    onTriggered: closeDelay.restart()
   }
 
-  // Ensure the drawer stays open if the mouse is currently over it
-  readonly property bool open: drawerHovered || hideTimer.running || panelHoverHandler.hovered
+  Timer {
+    id: closeDelay
+    interval: Global.dur.normal
+    onTriggered: {
+      if (!drawer.open) drawer.dismissed()
+    }
+  }
 
-  // flat rectangle mask that always covers the panel's current live position
+  // Ensure the drawer stays open if the mouse is currently over it or within grace period
+  readonly property bool open: anyHovered || hideTimer.running
+
+  // flat rectangle mask that always covers the panel's current live size
   mask: Region {
     x: panel.x
     y: 0
     width: panel.width
-    height: Math.max(0, panel.y + panel.height)
+    height: Math.max(0, panel.height)
   }
 
   Item {
     id: panel
+    clip: true
     width: drawer.drawerWidth
+    anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
-    height: drawer.drawerHeight
+    height: (drawer.open && drawer._ready) ? drawer.drawerHeight : 0
 
-    y: drawer.open ? 0 : -drawer.drawerHeight
-    Behavior on y {
-      NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+    Behavior on height {
+      Anim {}
     }
 
     HoverHandler {
       id: panelHoverHandler
     }
 
-    Shape {
+    NotchShape {
       anchors.fill: parent
-      preferredRendererType: Shape.CurveRenderer
-
-      ShapePath {
-        startX: 0; startY: 0
-        fillRule: ShapePath.OddEvenFill
-        fillColor: Theme.m3surface
-        strokeColor: "transparent"
-
-        PathArc {
-          x: Global.panelRadius; y: Global.panelRadius
-          radiusX: Global.panelRadius; radiusY: Global.panelRadius
-        }
-
-        PathLine { x: Global.panelRadius; y: drawerHeight - Global.notchRadius }
-        PathArc {
-          x: Global.panelRadius + Global.notchRadius; y: drawerHeight
-          radiusX: Global.notchRadius; radiusY: Global.notchRadius
-          direction: PathArc.Counterclockwise
-        }
-
-        PathLine { x: drawerWidth - Global.panelRadius - Global.notchRadius; y: drawer.height }
-
-        PathArc {
-          x: drawerWidth - Global.panelRadius; y: drawerHeight - Global.notchRadius
-          radiusX: Global.notchRadius; radiusY: Global.notchRadius
-          direction: PathArc.Counterclockwise
-        }
-        PathLine { x: drawerWidth - Global.panelRadius; y: Global.panelRadius }
-
-        PathArc {
-          x: drawerWidth; y: 0
-          radiusX: Global.panelRadius; radiusY: Global.panelRadius
-        }
-      }
+      edge: "top"
     }
 
     RowLayout {
       id: contentLayout
-      anchors.fill: parent
-      anchors.leftMargin: Global.pad + Global.panelRadius
-      anchors.rightMargin: Global.pad + Global.panelRadius
-      anchors.topMargin: Global.pad + Global.panelRadius
+      width: drawer.drawerWidth - 2 * (Global.pad + Global.panelRadius)
+      height: drawer.drawerHeight - (Global.pad + Global.panelRadius) - (Global.pad + Global.notchRadius)
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.bottom: parent.bottom
       anchors.bottomMargin: Global.pad + Global.notchRadius
       spacing: Global.pad
       clip: true

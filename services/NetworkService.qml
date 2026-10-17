@@ -20,7 +20,7 @@ Singleton {
 
   readonly property bool connected: wifiDevice?.connected ?? false
   readonly property ObjectModel networks: wifiDevice?.networks ?? null
-  readonly property int networkCount: networks?.count ?? 0
+  readonly property int networkCount: networks?.values.length ?? 0
 
   // the network currently marked connected, or null
   readonly property Network connectedNetwork: {
@@ -63,11 +63,5 @@ Singleton {
 
   function forget(network: WifiNetwork): void {
     network.forget()
-  }
-
-  // auto-start scanning once a wifi device is found, so `networks` populates
-  // without every widget needing to remember to call startScan() itself
-  onWifiDeviceChanged: {
-    if (wifiDevice) wifiDevice.scannerEnabled = true
   }
 }
