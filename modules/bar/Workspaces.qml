@@ -35,9 +35,11 @@ Item {
   }
 
   height: Global.pillHeight
+  implicitWidth: row.implicitWidth   // without this the Item is 0px wide and the row just overflows it
   Layout.alignment: Qt.AlignLeft
 
   RowLayout {
+    id: row
     anchors.fill: parent
     spacing: 10
 
@@ -65,11 +67,14 @@ Item {
         Behavior on radius {
           Anim {}
         }
+        Behavior on color {
+          ColorAnimation { duration: Global.dur.fast }
+        }
 
         Text {
           anchors.centerIn: parent
           text: modelData
-          color: focused ? Theme.m3surface : Theme.m3on_surface
+          color: focused ? Theme.m3on_primary : Theme.m3on_surface
           font.family: Global.font
           font.bold: focused ? true : false
           font.pixelSize: Global.fontSize
@@ -105,11 +110,15 @@ Item {
         color: modelData.active ? Theme.m3tertiary : Theme.m3surface_variant
         radius: 6
 
+        Behavior on color {
+          ColorAnimation { duration: Global.dur.fast }
+        }
+
         Text {
           id: label
           anchors.centerIn: parent
           text: modelData.label
-          color: modelData.active ? Theme.m3surface : Theme.m3on_surface
+          color: modelData.active ? Theme.m3on_tertiary : Theme.m3on_surface
           font.family: Global.font
           font.weight: modelData.active ? 600 : 500
           font.pixelSize: Global.fontSize

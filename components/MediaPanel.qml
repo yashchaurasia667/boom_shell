@@ -12,7 +12,7 @@ Rectangle {
   property color cardColor: Theme.m3surface_bright
   property color artBgColor: Theme.m3surface_container_highest
   property color activeColor: Theme.m3primary
-  property color activeContentColor: Theme.m3surface
+  property color activeContentColor: Theme.m3on_primary
   property color trackColor: Theme.m3surface_variant
   property color textPrimary: Theme.m3on_surface
   property color textSecondary: Theme.m3on_surface_variant

@@ -18,7 +18,7 @@ Item {
   property color trackColor: Theme.m3surface_variant
   property color fillColor: Theme.m3primary
 
-  property color activeIconColor: Theme.m3surface         // icon/text color when covered by fill
+  property color activeIconColor: Theme.m3on_primary         // icon/text color when covered by fill
   property color inactiveIconColor: Theme.m3on_surface    // icon/text color when on empty track
 
   property color iconColor: "transparent"                 // set to a solid color to override auto-contrast

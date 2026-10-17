@@ -117,7 +117,7 @@ PanelWindow {
           contentItem: Text {
             text: parent.text
             font.family: compFont
-            color: Theme.m3inverse_on_surface
+            color: Theme.m3on_primary
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             font.bold: true

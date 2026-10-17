@@ -70,11 +70,24 @@ PanelWindow {
     anchors.top: parent.top
     anchors.bottom: parent.bottom
     anchors.right: parent.right
-    width: (controlCenter.open && controlCenter._ready) ? controlCenter.panelWidth : 0
+    width: 0
 
-    Behavior on width {
-      Anim {}
+    // spring in, smooth (no overshoot) out
+    states: State {
+      name: "shown"
+      when: controlCenter.open && controlCenter._ready
+      PropertyChanges { target: panel; width: controlCenter.panelWidth }
     }
+    transitions: [
+      Transition {
+        to: "shown"
+        Anim { target: panel; property: "width"; curve: Global.spring }
+      },
+      Transition {
+        from: "shown"
+        Anim { target: panel; property: "width"; curve: Global.smooth }
+      }
+    ]
 
     HoverHandler {
       id: hoverHandler

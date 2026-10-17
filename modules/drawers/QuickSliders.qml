@@ -99,11 +99,24 @@ PanelWindow {
     anchors.right: parent.right
     anchors.verticalCenter: parent.verticalCenter
     height: root.panelHeight
-    width: (root.open && root._ready) ? root.targetWidth : 0
+    width: 0
 
-    Behavior on width {
-      Anim {}
+    // spring in, smooth (no overshoot) out
+    states: State {
+      name: "shown"
+      when: root.open && root._ready
+      PropertyChanges { target: panel; width: root.targetWidth }
     }
+    transitions: [
+      Transition {
+        to: "shown"
+        Anim { target: panel; property: "width"; curve: Global.spring }
+      },
+      Transition {
+        from: "shown"
+        Anim { target: panel; property: "width"; curve: Global.smooth }
+      }
+    ]
 
     HoverHandler {
       id: panelHoverHandler

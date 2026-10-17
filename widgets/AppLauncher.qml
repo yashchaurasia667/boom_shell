@@ -94,6 +94,12 @@ PanelWindow {
     color: Qt.rgba(Theme.m3shadow.r, Theme.m3shadow.g, Theme.m3shadow.b, 0.3)
     radius: Global.borderRadius
 
+    // fade the scrim with the panel instead of popping in
+    opacity: (launcher.open && launcher._ready) ? 1 : 0
+    Behavior on opacity {
+      NumberAnimation { duration: Global.dur.normal; easing.type: Easing.OutCubic }
+    }
+
     MouseArea {
       anchors.fill: parent
       onClicked: launcher.hide()
@@ -109,13 +115,26 @@ PanelWindow {
       horizontalCenter: parent.horizontalCenter
     }
     width: launcher.launcherWidth
-    height: (open && _ready) ? launcher.launcherHeight : 0
+    height: 0
 
     color: "transparent"
 
-    Behavior on height {
-      Anim {}
+    // spring in, smooth (no overshoot) out
+    states: State {
+      name: "shown"
+      when: launcher.open && launcher._ready
+      PropertyChanges { target: panel; height: launcher.launcherHeight }
     }
+    transitions: [
+      Transition {
+        to: "shown"
+        Anim { target: panel; property: "height"; curve: Global.spring }
+      },
+      Transition {
+        from: "shown"
+        Anim { target: panel; property: "height"; curve: Global.smooth }
+      }
+    ]
 
     // swallow clicks so they don't fall through to the backdrop
     MouseArea {
@@ -151,9 +170,15 @@ PanelWindow {
         TextInput {
           id: searchInput
           Layout.fillWidth: true
+          font.family: Global.font
           font.pixelSize: 16
           color: Theme.m3on_surface
+          selectionColor: Theme.m3primary
+          selectedTextColor: Theme.m3on_primary
           clip: true
+
+          // new query -> start from the top result
+          onTextChanged: listView.currentIndex = 0
 
           Keys.onPressed: (event) => {
             if (event.key === Qt.Key_Escape) {
@@ -199,6 +224,10 @@ PanelWindow {
 
         clip: true
         cacheBuffer: 0
+
+        // keep the keyboard selection on screen
+        onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+
         model: ScriptModel {
           id: filteredApps
           values: {
@@ -235,6 +264,10 @@ PanelWindow {
           radius: 8
           color: index === listView.currentIndex ? Theme.m3primary : "transparent"
 
+          Behavior on color {
+            ColorAnimation { duration: Global.dur.fast }
+          }
+
           RowLayout {
             anchors.fill: parent
             anchors.margins: 8
@@ -259,7 +292,7 @@ PanelWindow {
               Label {
                 Layout.fillWidth: true
                 text: resultRow.modelData.name
-                color: index === listView.currentIndex ? Theme.m3surface : Theme.m3primary
+                color: index === listView.currentIndex ? Theme.m3on_primary : Theme.m3primary
                 font.weight: 600
                 font.pixelSize: 16
                 elide: Text.ElideRight
@@ -267,10 +300,10 @@ PanelWindow {
 
               Label {
                 Layout.fillWidth: true
-                visible: resultRow.modelData.genericName !== " "
+                visible: (resultRow.modelData.genericName ?? "").trim() !== ""
                 text: resultRow.modelData.genericName
                 font.pixelSize: 12
-                color: index === listView.currentIndex ? Theme.m3surface : Theme.m3on_surface
+                color: index === listView.currentIndex ? Theme.m3on_primary : Theme.m3on_surface
                 opacity: 0.6
                 elide: Text.ElideRight
               }

@@ -61,7 +61,7 @@ Rectangle {
   property color hoverCardColor: Theme.m3surface_variant
 
   property color activeColor: Theme.m3primary
-  property color activeContentColor: Theme.m3surface
+  property color activeContentColor: Theme.m3on_primary
 
   property color trackColor: Theme.m3outline_variant
   property color textPrimary: Theme.m3on_surface

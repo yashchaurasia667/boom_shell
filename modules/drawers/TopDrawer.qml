@@ -36,7 +36,7 @@ PanelWindow {
   readonly property color cardColor: Theme.m3surface_container_highest
   readonly property color mediaCardColor: Theme.m3surface_bright
   readonly property color activeColor: Theme.m3primary
-  readonly property color activeContentColor: Theme.m3surface
+  readonly property color activeContentColor: Theme.m3on_primary
   readonly property color trackColor: Theme.m3outline_variant
   readonly property color textPrimary: Theme.m3on_surface
   readonly property color textSecondary: Theme.m3on_surface_variant
@@ -364,11 +364,24 @@ PanelWindow {
     width: drawer.drawerWidth
     anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
-    height: (drawer.open && drawer._ready) ? drawer.drawerHeight : 0
+    height: 0
 
-    Behavior on height {
-      Anim {}
+    // spring in, smooth (no overshoot) out
+    states: State {
+      name: "shown"
+      when: drawer.open && drawer._ready
+      PropertyChanges { target: panel; height: drawer.drawerHeight }
     }
+    transitions: [
+      Transition {
+        to: "shown"
+        Anim { target: panel; property: "height"; curve: Global.spring }
+      },
+      Transition {
+        from: "shown"
+        Anim { target: panel; property: "height"; curve: Global.smooth }
+      }
+    ]
 
     HoverHandler {
       id: panelHoverHandler

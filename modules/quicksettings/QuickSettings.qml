@@ -25,7 +25,7 @@ Item {
   property color onAccentColor: Theme.m3on_primary
 
   property color activeTileColor: Theme.m3primary
-  property color onActiveTileColor: Theme.m3surface
+  property color onActiveTileColor: Theme.m3on_primary
   property color textPrimary: Theme.m3on_surface
   property color textSecondary: Theme.m3on_surface_variant
 

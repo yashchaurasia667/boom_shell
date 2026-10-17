@@ -99,13 +99,26 @@ PanelWindow {
       horizontalCenter: parent.horizontalCenter
     }
     width: clipboard.panelWidth
-    height: (open && _ready) ? clipboard.panelHeight : 0
+    height: 0
 
     color: "transparent"
 
-    Behavior on height {
-      Anim {}
+    // spring in, smooth (no overshoot) out
+    states: State {
+      name: "shown"
+      when: clipboard.open && clipboard._ready
+      PropertyChanges { target: panel; height: clipboard.panelHeight }
     }
+    transitions: [
+      Transition {
+        to: "shown"
+        Anim { target: panel; property: "height"; curve: Global.spring }
+      },
+      Transition {
+        from: "shown"
+        Anim { target: panel; property: "height"; curve: Global.smooth }
+      }
+    ]
 
     MouseArea {
       anchors.fill: parent
@@ -140,9 +153,15 @@ PanelWindow {
         TextInput {
           id: searchInput
           Layout.fillWidth: true
+          font.family: Global.font
           font.pixelSize: 18
           color: Theme.m3on_surface
+          selectionColor: Theme.m3primary
+          selectedTextColor: Theme.m3on_primary
           clip: true
+
+          // new query -> start from the top result
+          onTextChanged: listView.currentIndex = 0
 
           Keys.onPressed: (event) => {
             if (event.key === Qt.Key_Escape) {
@@ -192,6 +211,10 @@ PanelWindow {
 
         clip: true
         cacheBuffer: 0
+
+        // keep the keyboard selection on screen
+        onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+
         model: ScriptModel {
           id: filteredEntries
           values: {
@@ -218,6 +241,10 @@ PanelWindow {
           height: resultRow.modelData.isImage ? 120 : 60
           radius: 8
           color: index === listView.currentIndex ? Theme.m3primary : "transparent"
+
+          Behavior on color {
+            ColorAnimation { duration: Global.dur.fast }
+          }
 
           Component.onCompleted: {
             if (resultRow.modelData.isImage)
@@ -251,7 +278,7 @@ PanelWindow {
               Layout.fillWidth: true
               verticalAlignment: Text.AlignVCenter
               text: resultRow.modelData.preview
-              color: index === listView.currentIndex ? Theme.m3surface : Theme.m3on_surface
+              color: index === listView.currentIndex ? Theme.m3on_primary : Theme.m3on_surface
               font.pixelSize: 18
               font.weight: 450
               elide: Text.ElideRight

@@ -18,7 +18,7 @@ Rectangle {
   property color hoverCardColor: Theme.m3surface_bright
   property color badgeHoverColor: Theme.m3surface_variant
   property color activeColor: Theme.m3primary
-  property color activeContentColor: Theme.m3surface
+  property color activeContentColor: Theme.m3on_primary
   property color textPrimary: Theme.m3on_primary_container
   property color textSecondary: Theme.m3on_surface_variant
 

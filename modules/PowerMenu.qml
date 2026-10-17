@@ -36,6 +36,7 @@ PanelWindow {
   aboveWindows: true
   color: "transparent"
   WlrLayershell.layer: WlrLayer.Overlay
+  WlrLayershell.namespace: "power-menu"
   WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
   visible: open || hideDelay.running
@@ -79,9 +80,23 @@ PanelWindow {
     root.hide()
   }
 
+  // scrim inside the screen frame (same inset as the app launcher) that fades with the panel
   Rectangle {
-    anchors.fill: parent
+    anchors {
+      fill: parent
+      topMargin: Global.pillHeight
+      leftMargin: Global.border
+      rightMargin: Global.border
+      bottomMargin: Global.border
+    }
+    radius: Global.borderRadius
     color: Qt.rgba(Theme.m3shadow.r, Theme.m3shadow.g, Theme.m3shadow.b, 0.3)
+    opacity: (root.open && root._ready) ? 1 : 0
+
+    Behavior on opacity {
+      NumberAnimation { duration: Global.dur.normal; easing.type: Easing.OutCubic }
+    }
+
     MouseArea {
       anchors.fill: parent
       onClicked: root.hide()
@@ -94,12 +109,25 @@ PanelWindow {
     anchors.bottom: parent.bottom
     anchors.horizontalCenter: parent.horizontalCenter
     width: root.panelWidth
-    height: (root.open && root._ready) ? root.panelHeight : 0
+    height: 0
     focus: root.open
 
-    Behavior on height {
-      Anim {}
+    // spring in, smooth (no overshoot) out
+    states: State {
+      name: "shown"
+      when: root.open && root._ready
+      PropertyChanges { target: panel; height: root.panelHeight }
     }
+    transitions: [
+      Transition {
+        to: "shown"
+        Anim { target: panel; property: "height"; curve: Global.spring }
+      },
+      Transition {
+        from: "shown"
+        Anim { target: panel; property: "height"; curve: Global.smooth }
+      }
+    ]
 
     Keys.onPressed: (event) => {
       let action = null

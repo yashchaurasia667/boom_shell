@@ -10,7 +10,7 @@ Button {
   property color baseColor: Theme.m3primary
   property color hoverColor: Theme.m3primary_fixed
   property color pressColor: Theme.m3primary_container
-  property color textColor: Theme.m3surface
+  property color textColor: Theme.m3on_primary
   property string btnFont: Global.font
 
   property int fontSize: Global.fontSize
