@@ -14,7 +14,7 @@ PanelWindow {
   property real thickness: Global.border        // border stroke thickness
   property real radius: Global.borderRadius     // corner radius
   property color borderColor: Theme.m3surface
-  property bool clockHovered: clockHandler.hovered
+  property bool clockHovered: clock.hovered
 
   readonly property bool controlCenterVisible: hotCornerArea.containsMouse
   readonly property bool slidersZoneHovered: slidersTriggerHandler.hovered
@@ -129,9 +129,9 @@ PanelWindow {
       id: clock
       anchors.centerIn: parent
 
-      HoverHandler {
-        id: clockHandler
-      }
+      // HoverHandler {
+      //   id: clockHandler
+      // }
     }
 
     RowLayout {

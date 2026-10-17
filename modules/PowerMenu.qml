@@ -12,8 +12,8 @@ PanelWindow {
 
   property bool open: false
   property bool _ready: false
-  property int panelHeight: 160
-  property int panelWidth: 660
+  property int panelHeight: 150
+  property int panelWidth: 580
   property string pendingCmd: ""
   signal dismissed()
 
@@ -135,21 +135,43 @@ PanelWindow {
       anchors.top: parent.top
       anchors.topMargin: root.panelHeight - 120 - Global.pad
       anchors.horizontalCenter: parent.horizontalCenter
-      spacing: 24
+      spacing: 18
 
       Repeater {
         model: root.actions
 
         delegate: CustomButton {
+          id: actionButton
           btnFont: Global.iconFont
           cornerRadius: Global.panelRadius
-          fontSize: 52
+          
+          hoverColor: Theme.m3surface_variant
+          baseColor: Theme.m3surface_bright
 
-          text: modelData.icon
-          implicitWidth: 120
-          implicitHeight: 120
+          implicitWidth: 110
+          implicitHeight: 110
 
           onClicked: root.runAction(modelData.cmd)
+
+          ColumnLayout {
+            Layout.alignment: Qt.AlignCenter
+            // anchors.centerIn: parent
+            spacing: 6
+
+            Icon {
+              font.pixelSize: 40
+              color: actionButton.hovered ? Theme.m3primary : Theme.m3on_surface
+              text: modelData.icon // Fixed typo from modeData to modelData
+              Layout.alignment: Qt.AlignCenter
+            }
+
+            Label {
+              text: modelData.label
+              color: actionButton.hovered ? Theme.m3primary : Theme.m3on_surface
+              font.pixelSize: 16
+              Layout.alignment: Qt.AlignCenter
+            }
+          }
         }
       }
     }

@@ -131,6 +131,8 @@ PanelWindow {
         Layout.alignment: Qt.AlignHCenter
         from: 0; to: 1
         icon: AudioService.muted ? "volume_off" : "volume_up"
+        iconSize: 20
+        fontSize: 14
         value: AudioService.volume
         onMoved: AudioService.setVolume(value)
         onIconClicked: AudioService.toggleMute()
@@ -142,7 +144,9 @@ PanelWindow {
         Layout.preferredWidth: root.sliderWidth
         Layout.alignment: Qt.AlignHCenter
         from: 0; to: 1
-        icon: "brightness_7"
+        icon: "brightness_5"
+        iconSize: 20
+        fontSize: 14
         value: BrightnessService.brightness
         onMoved: BrightnessService.setBrightness(value)
       }

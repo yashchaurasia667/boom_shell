@@ -10,6 +10,7 @@ PanelWindow {
   id: root
   property int panelMargins: 20
   property string clockFont: "Changa One"
+  property int fontSize: 220
 
   anchors {
     left: true
@@ -26,12 +27,12 @@ PanelWindow {
   ColumnLayout {
     anchors.fill: parent
     anchors.leftMargin: panelMargins
-    spacing: -20
+    spacing: -90
 
     ColumnLayout {
       Layout.fillWidth: true
       Layout.fillHeight: true
-      spacing: -125
+      spacing: -(root.fontSize/2)
 
       SystemClock {
         id: clock
@@ -41,7 +42,7 @@ PanelWindow {
       Label {
         text: Qt.formatDateTime(clock.date, "hh")
         font.family: clockFont
-        font.pixelSize: 250
+        font.pixelSize: root.fontSize
         color: Theme.m3primary
 
         style: Text.Raised
@@ -50,16 +51,17 @@ PanelWindow {
       Label {
         text: Qt.formatDateTime(clock.date, " mm")
         font.family: clockFont
-        font.pixelSize: 250
-        color: Theme.m3secondary
+        font.pixelSize: root.fontSize
+        color: Theme.m3on_secondary_container
 
         style: Text.Raised
         styleColor: Theme.m3surface
       }
     }
+
     Label {
       text: Qt.formatDateTime(clock.date, "dddd, d MMMM yyyy")
-      font.pixelSize: 32
+      font.pixelSize: 28
       font.family: "Rowdies Light"
       color: Theme.m3on_error_container
 
