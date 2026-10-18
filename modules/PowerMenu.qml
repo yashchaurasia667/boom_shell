@@ -32,6 +32,7 @@ PanelWindow {
     left: true
     right: true
   }
+  exclusionMode: ExclusionMode.Ignore
 
   aboveWindows: true
   color: "transparent"
@@ -83,12 +84,12 @@ PanelWindow {
   Rectangle {
     anchors {
       fill: parent
-      topMargin: Global.pillHeight
-      leftMargin: Global.border
-      rightMargin: Global.border
-      bottomMargin: Global.border
+      // topMargin: Global.pillHeight
+      // leftMargin: Global.border
+      // rightMargin: Global.border
+      // bottomMargin: Global.border
     }
-    radius: Global.borderRadius
+    // radius: Global.borderRadius
     color: Qt.rgba(Theme.m3shadow.r, Theme.m3shadow.g, Theme.m3shadow.b, 0.3)
     opacity: (root.open && root._ready) ? 1 : 0
 
