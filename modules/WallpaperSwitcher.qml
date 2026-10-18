@@ -70,6 +70,12 @@ PanelWindow {
     }
   }
 
+  Timer {
+    id: enableAnimTimer
+    interval: 60
+    onTriggered: list.instantJump = false
+  }
+
   onOpenChanged: {
     if (open) {
       hideDelay.stop()
@@ -163,15 +169,39 @@ PanelWindow {
 
   Process {
     id: listProc
-    command: ["sh", "-c", "find \"$1\" -type f \\( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \\) | sort", "sh", wallpaper.wallpaperDir]
+    // Lists wallpapers; any file whose contents are identical to the copy of the
+    // currently applied wallpaper ($2) is additionally emitted as a "CUR:<path>" line.
+    command: [
+      "sh", "-c",
+      "find \"$1\" -type f \\( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \\) | sort | "
+      + "while IFS= read -r f; do "
+      + "if [ -f \"$2\" ] && cmp -s \"$f\" \"$2\"; then printf 'CUR:%s\\n' \"$f\"; fi; "
+      + "printf '%s\\n' \"$f\"; done",
+      "sh", wallpaper.wallpaperDir, wallpaper.currentWallpaperFile
+    ]
     stdout: StdioCollector {
       onStreamFinished: {
-        wallpaper.wallpapers = text.split("\n").filter(l => l.length > 0)
-        Qt.callLater(() => {
-          const i = Math.max(0, wallpaper.wallpapers.indexOf(Global.wallLast))
-          list.currentIndex = i
-          list.positionViewAtIndex(i, ListView.Center)
-        })
+        const lines = text.split("\n").filter(l => l.length > 0)
+        const items = lines.filter(l => !l.startsWith("CUR:"))
+        const matches = lines.filter(l => l.startsWith("CUR:")).map(l => l.slice(4))
+
+        // Prefer the file that is byte-identical to the applied wallpaper copy;
+        // fall back to Global.wallLast only if nothing matches.
+        const last = (Global.wallLast || "").trim()
+        const target = matches.length > 0
+          ? (matches.indexOf(last) >= 0 ? last : matches[0])
+          : last
+        let idx = items.indexOf(target)
+        if (idx < 0 && target !== "") {
+          const base = target.split("/").pop()
+          idx = items.findIndex(p => p.split("/").pop() === base)
+        }
+        idx = Math.max(0, idx)
+
+        list.instantJump = true
+        wallpaper.wallpapers = items
+        list.currentIndex = idx
+        enableAnimTimer.restart()
       }
     }
   }
@@ -498,7 +528,7 @@ PanelWindow {
             text: Global.wallCustomColor
             maximumLength: 7
             clip: true
-            font.family: Global.font
+            font.family: Global.font || "Maven Pro"
             font.pixelSize: 12
             color: Global.wallUseCustom ? Theme.m3on_secondary_container : Theme.m3on_surface_variant
             selectionColor: Theme.m3primary
@@ -528,19 +558,29 @@ PanelWindow {
 
         ListView {
           id: list
+          property bool instantJump: false
           anchors.fill: parent
           clip: true
+          interactive: false
           orientation: ListView.Horizontal
           spacing: wallpaper.thumbSpacing
-          cacheBuffer: wallpaper.thumbWidth
+          cacheBuffer: wallpaper.thumbWidth * 4
           model: wallpaper.wallpapers
-          boundsBehavior: Flickable.StopAtBounds
+          highlightFollowsCurrentItem: false
+          highlightRangeMode: ListView.NoHighlightRange
 
-          highlightRangeMode: ListView.StrictlyEnforceRange
-          preferredHighlightBegin: (width - wallpaper.thumbWidth) / 2
-          preferredHighlightEnd: (width + wallpaper.thumbWidth) / 2
-          highlightMoveDuration: Global.dur.normal
-          highlightMoveVelocity: -1
+          // Center `currentIndex` directly via contentX without StrictlyEnforceRange
+          // so ListView can never mutate `currentIndex` to idx - 1 or idx + 1.
+          Binding {
+            target: list
+            property: "contentX"
+            value: Math.max(0, list.currentIndex) * (wallpaper.thumbWidth + wallpaper.thumbSpacing) - (list.width - wallpaper.thumbWidth) / 2
+          }
+
+          Behavior on contentX {
+            enabled: !list.instantJump
+            Anim { curve: Global.smooth }
+          }
 
           delegate: Item {
             id: cell
