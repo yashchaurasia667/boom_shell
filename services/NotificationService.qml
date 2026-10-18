@@ -15,23 +15,32 @@ Singleton {
   readonly property int count: notifications.values.length
   readonly property bool hasNotifications: count > 0
 
-  property bool doNotDisturb: false
+  property bool doNotDisturb: Global.notifDoNotDisturb
   // let urgency=critical notifications through even while in Do Not Disturb
-  property bool allowCriticalInDnd: false
+  readonly property bool allowCriticalInDnd: Global.notifAllowCriticalInDnd
   // how many notifications were silenced since DND was turned on
   property int missedCount: 0
 
-  property int defaultTimeout: 5000
+  readonly property int defaultTimeout: Global.notifDefaultTimeout
   property int exitAnimDuration: Global.dur.normal
 
   // persistent history — independent of trackedNotifications, survives dismissal/expiry
   property var history: []
   readonly property int historyCount: history.length
   readonly property bool hasHistory: historyCount > 0
-  property int historyLimit: 50
+  readonly property int historyLimit: Global.notifHistoryLimit
 
   signal notified(notification: Notification)
   signal expiring(notification: Notification)
+
+  Connections {
+    target: Global
+    function onNotifDoNotDisturbChanged(): void {
+      if (root.doNotDisturb !== Global.notifDoNotDisturb) {
+        root.doNotDisturb = Global.notifDoNotDisturb
+      }
+    }
+  }
 
   function dismiss(notification: Notification): void {
     notification.dismiss()
@@ -64,12 +73,21 @@ Singleton {
 
   property int _historyIdCounter: 0
 
-  // Turning DND on takes down any popups that are currently visible.
+  // Turning DND on takes down any popups that are currently visible and syncs with Global.
   onDoNotDisturbChanged: {
+    if (Global.notifDoNotDisturb !== doNotDisturb) {
+      Global.notifDoNotDisturb = doNotDisturb
+    }
     if (doNotDisturb) {
       for (const n of [...notifications.values]) root._scheduleExpire(n, 0)
     } else {
       root.missedCount = 0
+    }
+  }
+
+  onHistoryLimitChanged: {
+    if (root.history.length > root.historyLimit) {
+      root.history = root.history.slice(0, root.historyLimit)
     }
   }
 

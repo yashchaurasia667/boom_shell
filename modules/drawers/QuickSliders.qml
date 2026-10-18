@@ -11,10 +11,10 @@ import qs.services
 PanelWindow {
   id: root
 
-  property int hoverZoneWidth: Global.border + 4
-  property int sliderHeight: 150
-  property int sliderWidth: 40
-  property int panelSpacing: 12
+  property int hoverZoneWidth: Global.border + Global.quickSlidersTriggerWidth
+  property int sliderHeight: Global.quickSlidersHeight
+  property int sliderWidth: Global.quickSlidersWidth
+  property int panelSpacing: Global.quickSlidersSpacing
   property bool triggerHovered: false
   property bool _ready: false
   signal dismissed()
@@ -33,7 +33,6 @@ PanelWindow {
   aboveWindows: false
   color: "transparent"
 
-  // Extra width headroom on the left so the elastic spring overshoot is never clipped by the window
   implicitWidth: targetWidth + 60
   implicitHeight: panelHeight
 
@@ -101,7 +100,6 @@ PanelWindow {
     height: root.panelHeight
     width: 0
 
-    // spring in, smooth (no overshoot) out
     states: State {
       name: "shown"
       when: root.open && root._ready
@@ -147,7 +145,7 @@ PanelWindow {
         iconSize: 20
         fontSize: 14
         value: AudioService.volume
-        onMoved: AudioService.setVolume(value)
+        onMoved: (value) => AudioService.setVolume(value)
         onIconClicked: AudioService.toggleMute()
       }
 
@@ -161,7 +159,7 @@ PanelWindow {
         iconSize: 20
         fontSize: 14
         value: BrightnessService.brightness
-        onMoved: BrightnessService.setBrightness(value)
+        onMoved: (value) => BrightnessService.setBrightness(value)
       }
     }
   }

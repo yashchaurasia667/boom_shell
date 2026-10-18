@@ -6,19 +6,18 @@ import qs.services
 import qs.components
 import qs.common
 
-
 Item {
   implicitWidth: row.implicitWidth
   implicitHeight: row.implicitHeight
 
-  visible: AudioService.ready
+  visible: Global.barShowVolume && AudioService.ready
 
   MouseArea {
     anchors.fill: parent
     acceptedButtons: Qt.LeftButton
     onClicked: AudioService.toggleMute()
     onWheel: (event) => {
-      AudioService.nudgeVolume(event.angleDelta.y > 0 ? 0.05 : -0.05)
+      AudioService.nudgeVolume(event.angleDelta.y > 0 ? Global.volumeWheelStep : -Global.volumeWheelStep)
     }
   }
 

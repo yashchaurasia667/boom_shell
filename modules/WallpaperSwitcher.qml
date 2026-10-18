@@ -14,13 +14,13 @@ PanelWindow {
 
   property bool open: false
   property bool _ready: false
-  property int panelWidth: 1290
-  property int panelHeight: 500
-  property int thumbWidth: 300
-  property int thumbHeight: 188
-  property int thumbSpacing: 14
-  property string wallpaperDir: Quickshell.env("HOME") + "/Pictures/wall"
-  property string currentWallpaperFile: "/opt/wal.png"   // copy of the applied wallpaper, used to re-run matugen
+  property int panelWidth: Global.wallpaperPanelWidth
+  property int panelHeight: Global.wallpaperPanelHeight
+  property int thumbWidth: Global.wallpaperThumbWidth
+  property int thumbHeight: Global.wallpaperThumbHeight
+  property int thumbSpacing: Global.wallpaperThumbSpacing
+  property string wallpaperDir: Global.wallpaperDir
+  property string currentWallpaperFile: Global.currentWallpaperFile
   property var wallpapers: []
   property bool applying: false
   signal dismissed()
@@ -43,19 +43,6 @@ PanelWindow {
   readonly property string currentName: {
     const p = wallpaper.wallpapers[list.currentIndex]
     return p ? p.split("/").pop() : ""
-  }
-
-  // Remembered between sessions (scheme, contrast and last applied wallpaper)
-  Settings {
-    id: prefs
-    location: "file://" + Quickshell.env("HOME") + "/.config/quickshell/wallpaper.conf"
-    category: "Wallpaper"
-    property string scheme: "scheme-tonal-spot"
-    property real contrast: 0.0
-    property string last: ""
-    property int sourceIndex: 0          // which extracted color matugen uses (--source-color-index)
-    property bool useCustom: false       // use customColor instead of an extracted one
-    property string customColor: "#6750a4"
   }
 
   Component.onCompleted: Qt.callLater(() => { wallpaper._ready = true })
@@ -110,7 +97,7 @@ PanelWindow {
   function apply(path: string): void {
     if (!path || wallpaper.applying) return
     wallpaper.applying = true
-    prefs.last = path
+    Global.wallLast = path
 
     applyProc.path = path
     applyProc.running = true
@@ -133,48 +120,47 @@ PanelWindow {
   }
 
   function setScheme(id: string): void {
-    prefs.scheme = id
+    Global.wallScheme = id
   }
 
   function cycleScheme(delta: int): void {
     const n = wallpaper.schemes.length
-    let i = wallpaper.schemes.findIndex(s => s.id === prefs.scheme)
+    let i = wallpaper.schemes.findIndex(s => s.id === Global.wallScheme)
     if (i < 0) i = 0
     setScheme(wallpaper.schemes[(i + delta + n) % n].id)
   }
 
   function setContrast(v: real): void {
     const clamped = Math.max(-1, Math.min(1, Math.round(v * 20) / 20))
-    prefs.contrast = clamped
+    Global.wallContrast = clamped
   }
 
   function setSourceIndex(i: int): void {
-    prefs.useCustom = false
-    prefs.sourceIndex = i
+    Global.wallUseCustom = false
+    Global.wallSourceIndex = i
   }
 
   function cycleSource(delta: int): void {
     const n = wallpaper.sourceCount
-    setSourceIndex((prefs.useCustom ? 0 : prefs.sourceIndex + delta + n) % n)
+    setSourceIndex((Global.wallUseCustom ? 0 : Global.wallSourceIndex + delta + n) % n)
   }
 
   function setCustomColor(text: string): bool {
     const m = /^#?([0-9a-fA-F]{6})$/.exec(text.trim())
     if (!m) return false
-    prefs.customColor = "#" + m[1].toLowerCase()
-    prefs.useCustom = true
+    Global.wallCustomColor = "#" + m[1].toLowerCase()
+    Global.wallUseCustom = true
     return true
   }
 
   function contrastLabel(): string {
-    const c = prefs.contrast
+    const c = Global.wallContrast
     if (c === 0) return "Standard"
     return (c > 0 ? "+" : "") + c.toFixed(2)
   }
 
   // ── processes ──
 
-  // list wallpaper files in the directory
   Process {
     id: listProc
     command: ["sh", "-c", "find \"$1\" -type f \\( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \\) | sort", "sh", wallpaper.wallpaperDir]
@@ -182,7 +168,7 @@ PanelWindow {
       onStreamFinished: {
         wallpaper.wallpapers = text.split("\n").filter(l => l.length > 0)
         Qt.callLater(() => {
-          const i = Math.max(0, wallpaper.wallpapers.indexOf(prefs.last))
+          const i = Math.max(0, wallpaper.wallpapers.indexOf(Global.wallLast))
           list.currentIndex = i
           list.positionViewAtIndex(i, ListView.Center)
         })
@@ -190,7 +176,6 @@ PanelWindow {
     }
   }
 
-  // awww (transition) -> cp -> matugen, run in order inside a single shell so paths are never re-parsed
   Process {
     id: applyProc
     property string path: ""
@@ -198,11 +183,12 @@ PanelWindow {
       "sh", "-c",
       "awww img \"$1\" --transition-type=random; cp \"$1\" \"$4\"; "
       + "case \"$5\" in "
-      + "hex:*) matugen color hex \"${5#hex:}\" -m dark -t \"$2\" --contrast=\"$3\" ;; "
-      + "*) matugen image \"$1\" -m dark -t \"$2\" --contrast=\"$3\" --source-color-index \"${5#idx:}\" ;; "
+      + "hex:*) matugen color hex \"${5#hex:}\" -m \"$6\" -t \"$2\" --contrast=\"$3\" ;; "
+      + "*) matugen image \"$1\" -m \"$6\" -t \"$2\" --contrast=\"$3\" --source-color-index \"${5#idx:}\" ;; "
       + "esac",
-      "sh", path, prefs.scheme, prefs.contrast.toFixed(2), wallpaper.currentWallpaperFile,
-      prefs.useCustom ? "hex:" + prefs.customColor : "idx:" + prefs.sourceIndex
+      "sh", path, Global.wallScheme, Global.wallContrast.toFixed(2), wallpaper.currentWallpaperFile,
+      Global.wallUseCustom ? "hex:" + Global.wallCustomColor : "idx:" + Global.wallSourceIndex,
+      Global.matugenMode
     ]
     onExited: {
       wallpaper.applying = false
@@ -234,7 +220,6 @@ PanelWindow {
     height: 0
     color: "transparent"
 
-    // spring open, smooth (no overshoot) close
     states: State {
       name: "shown"
       when: wallpaper.open && wallpaper._ready
@@ -253,7 +238,7 @@ PanelWindow {
 
     Keys.onPressed: (event) => {
       const k = event.key
-      if (customField.activeFocus) return   // typing a hex color
+      if (customField.activeFocus) return
       if (k === Qt.Key_Escape) wallpaper.hide()
       else if (k === Qt.Key_Left || k === Qt.Key_H) wallpaper.step(-1)
       else if (k === Qt.Key_Right || k === Qt.Key_L) wallpaper.step(1)
@@ -262,8 +247,8 @@ PanelWindow {
       else if (k === Qt.Key_Home) wallpaper.setIndex(0)
       else if (k === Qt.Key_End) wallpaper.setIndex(wallpaper.wallpapers.length - 1)
       else if (k === Qt.Key_Return || k === Qt.Key_Enter) wallpaper.applyCurrent()
-      else if (k === Qt.Key_Up) wallpaper.setContrast(prefs.contrast + 0.1)
-      else if (k === Qt.Key_Down) wallpaper.setContrast(prefs.contrast - 0.1)
+      else if (k === Qt.Key_Up) wallpaper.setContrast(Global.wallContrast + 0.1)
+      else if (k === Qt.Key_Down) wallpaper.setContrast(Global.wallContrast - 0.1)
       else if (k === Qt.Key_Comma) wallpaper.cycleSource(-1)
       else if (k === Qt.Key_Period) wallpaper.cycleSource(1)
       else if (k === Qt.Key_Tab) wallpaper.cycleScheme(1)
@@ -275,7 +260,6 @@ PanelWindow {
       event.accepted = true
     }
 
-    // swallow clicks so they don't fall through to the backdrop
     MouseArea {
       anchors.fill: parent
       onClicked: {}
@@ -351,7 +335,7 @@ PanelWindow {
               id: chip
               required property var modelData
               required property int index
-              readonly property bool selected: prefs.scheme === chip.modelData.id
+              readonly property bool selected: Global.wallScheme === chip.modelData.id
 
               height: 32
               width: chipLabel.implicitWidth + 24
@@ -407,12 +391,10 @@ PanelWindow {
           wheelStep: 0.05
           onMoved: (v) => wallpaper.setContrast(v)
 
-          // Slider assigns `value` itself while dragging, which would break a plain binding,
-          // so keep it in sync (keyboard changes, restored settings) through a Binding object.
           Binding {
             target: contrastSlider
             property: "value"
-            value: prefs.contrast
+            value: Global.wallContrast
           }
         }
 
@@ -447,7 +429,7 @@ PanelWindow {
           delegate: Rectangle {
             id: srcChip
             required property int index
-            readonly property bool selected: !prefs.useCustom && prefs.sourceIndex === srcChip.index
+            readonly property bool selected: !Global.wallUseCustom && Global.wallSourceIndex === srcChip.index
 
             Layout.preferredHeight: 32
             Layout.preferredWidth: srcLabel.implicitWidth + 24
@@ -485,8 +467,8 @@ PanelWindow {
           Layout.preferredHeight: 32
           Layout.preferredWidth: 130
           radius: 16
-          color: prefs.useCustom ? Theme.m3secondary_container : "transparent"
-          border.width: prefs.useCustom ? 0 : 1
+          color: Global.wallUseCustom ? Theme.m3secondary_container : "transparent"
+          border.width: Global.wallUseCustom ? 0 : 1
           border.color: customField.activeFocus ? Theme.m3primary : Theme.m3outline_variant
 
           Behavior on color {
@@ -501,7 +483,7 @@ PanelWindow {
             width: 16
             height: 16
             radius: 8
-            color: prefs.customColor
+            color: Global.wallCustomColor
             border.width: 1
             border.color: Theme.m3outline
           }
@@ -513,23 +495,23 @@ PanelWindow {
             anchors.right: parent.right
             anchors.rightMargin: 10
             anchors.verticalCenter: parent.verticalCenter
-            text: prefs.customColor
+            text: Global.wallCustomColor
             maximumLength: 7
             clip: true
             font.family: Global.font
             font.pixelSize: 12
-            color: prefs.useCustom ? Theme.m3on_secondary_container : Theme.m3on_surface_variant
+            color: Global.wallUseCustom ? Theme.m3on_secondary_container : Theme.m3on_surface_variant
             selectionColor: Theme.m3primary
             selectedTextColor: Theme.m3on_primary
             selectByMouse: true
 
             function commit(): void {
-              if (!wallpaper.setCustomColor(text)) text = prefs.customColor
+              if (!wallpaper.setCustomColor(text)) text = Global.wallCustomColor
               panel.forceActiveFocus()
             }
 
             onAccepted: commit()
-            Keys.onEscapePressed: { text = prefs.customColor; panel.forceActiveFocus() }
+            Keys.onEscapePressed: { text = Global.wallCustomColor; panel.forceActiveFocus() }
             onActiveFocusChanged: if (activeFocus) selectAll()
           }
         }
@@ -554,7 +536,6 @@ PanelWindow {
           model: wallpaper.wallpapers
           boundsBehavior: Flickable.StopAtBounds
 
-          // keep the selected wallpaper centered while browsing
           highlightRangeMode: ListView.StrictlyEnforceRange
           preferredHighlightBegin: (width - wallpaper.thumbWidth) / 2
           preferredHighlightEnd: (width + wallpaper.thumbWidth) / 2
@@ -619,7 +600,6 @@ PanelWindow {
           }
         }
 
-        // mouse wheel steps through the row (a plain horizontal ListView ignores vertical wheel)
         MouseArea {
           anchors.fill: parent
           acceptedButtons: Qt.NoButton

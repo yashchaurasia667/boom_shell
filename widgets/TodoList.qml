@@ -1,4 +1,3 @@
-// components/TodoList.qml
 import Quickshell
 import Quickshell.Widgets
 import Quickshell.Wayland
@@ -13,16 +12,16 @@ import qs.components
 
 PanelWindow {
   id: root
-  property int panelMargins: 10
-  property string compFont: "Maple Mono NF CN"
+  property int panelMargins: Global.todoMargins
+  property string compFont: Global.todoFont
 
   anchors {
     right: true
     bottom: true
   }
 
-  implicitWidth: 400 + panelMargins
-  implicitHeight: 400 + panelMargins
+  implicitWidth: Global.todoWidth + panelMargins
+  implicitHeight: Global.todoHeight + panelMargins
   aboveWindows: false
   color: "transparent"
 
@@ -35,7 +34,6 @@ PanelWindow {
     radius: clippingRect.radius
   }
 
-  // Persistent Storage configuration (explicit location avoids QSettings missing organizationName warning)
   Settings {
     id: settings
     location: "file://" + Quickshell.env("HOME") + "/.config/quickshell/todo-list.conf"
@@ -53,7 +51,7 @@ PanelWindow {
     anchors.bottomMargin: root.panelMargins
 
     radius: 12
-    color: Qt.rgba(Theme.m3surface.r, Theme.m3surface.g, Theme.m3surface.b, 0.75)
+    color: Qt.rgba(Theme.m3surface.r, Theme.m3surface.g, Theme.m3surface.b, Global.todoBgOpacity)
     border.color: Theme.m3inverse_on_surface
     border.width: 2
 
@@ -159,7 +157,7 @@ PanelWindow {
               font.family: compFont
               onToggled: {
                 todoModel.setProperty(index, "isCompleted", checked)
-                root.saveTasks() // Save on toggle
+                root.saveTasks()
               }
             }
 
@@ -190,7 +188,7 @@ PanelWindow {
 
               onClicked: {
                 todoModel.remove(index)
-                root.saveTasks() // Save on delete
+                root.saveTasks()
               }
             }
           }
@@ -199,7 +197,6 @@ PanelWindow {
     }
   }
 
-  // Logic Functions
   function addTask() {
     if (taskInput.text.trim() !== "") {
       todoModel.append({
@@ -207,7 +204,7 @@ PanelWindow {
         "isCompleted": false
       })
       taskInput.text = ""
-      saveTasks() // Save on add
+      saveTasks()
     }
   }
 

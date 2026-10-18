@@ -13,9 +13,9 @@ PanelWindow {
 
   property bool open: false
   property bool _ready: false
-  property int launcherWidth: 800
-  property int launcherHeight: 400
-  property int maxResults: 10
+  property int launcherWidth: Global.launcherWidth
+  property int launcherHeight: Global.launcherHeight
+  property int maxResults: Global.launcherMaxResults
   signal dismissed()
 
   Component.onCompleted: Qt.callLater(() => { launcher._ready = true })
@@ -72,7 +72,7 @@ PanelWindow {
     if (!entry) return
 
     if (entry.runInTerminal) {
-      const terminal = Quickshell.env("TERMINAL") ?? "alacritty"
+      const terminal = Quickshell.env("TERMINAL") || Global.terminal || "alacritty"
       Quickshell.execDetached([terminal, "-e", ...entry.command])
     } else {
       Quickshell.execDetached(entry.command)
@@ -94,7 +94,6 @@ PanelWindow {
     color: Qt.rgba(Theme.m3shadow.r, Theme.m3shadow.g, Theme.m3shadow.b, 0.3)
     radius: Global.borderRadius
 
-    // fade the scrim with the panel instead of popping in
     opacity: (launcher.open && launcher._ready) ? 1 : 0
     Behavior on opacity {
       NumberAnimation { duration: Global.dur.normal; easing.type: Easing.OutCubic }
@@ -119,7 +118,6 @@ PanelWindow {
 
     color: "transparent"
 
-    // spring in, smooth (no overshoot) out
     states: State {
       name: "shown"
       when: launcher.open && launcher._ready
@@ -136,7 +134,6 @@ PanelWindow {
       }
     ]
 
-    // swallow clicks so they don't fall through to the backdrop
     MouseArea {
       anchors.fill: parent
       onClicked: {}
@@ -177,7 +174,6 @@ PanelWindow {
           selectedTextColor: Theme.m3on_primary
           clip: true
 
-          // new query -> start from the top result
           onTextChanged: listView.currentIndex = 0
 
           Keys.onPressed: (event) => {
@@ -225,7 +221,6 @@ PanelWindow {
         clip: true
         cacheBuffer: 0
 
-        // keep the keyboard selection on screen
         onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
 
         model: ScriptModel {

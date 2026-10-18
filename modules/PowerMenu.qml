@@ -12,18 +12,18 @@ PanelWindow {
 
   property bool open: false
   property bool _ready: false
-  property int panelHeight: 150
-  property int panelWidth: 580
+  property int panelHeight: Global.powerMenuHeight
+  property int panelWidth: Global.powerMenuWidth
   property string pendingCmd: ""
   signal dismissed()
 
   Component.onCompleted: Qt.callLater(() => { root._ready = true })
 
   readonly property var actions: [
-    { id: "lock",     icon: "lock",               label: "Lock",     cmd: "hyprlock" },
-    { id: "logout",   icon: "logout",             label: "Logout",   cmd: "hyprctl dispatch exit" },
-    { id: "reboot",   icon: "autorenew",          label: "Reboot",   cmd: "reboot" },
-    { id: "shutdown", icon: "power_settings_new", label: "Shutdown", cmd: "shutdown now" }
+    { id: "lock",     icon: "lock",               label: "Lock",     cmd: Global.lockCmd },
+    { id: "logout",   icon: "logout",             label: "Logout",   cmd: Global.logoutCmd },
+    { id: "reboot",   icon: "autorenew",          label: "Reboot",   cmd: Global.rebootCmd },
+    { id: "shutdown", icon: "power_settings_new", label: "Shutdown", cmd: Global.shutdownCmd }
   ]
 
   anchors {
@@ -80,7 +80,6 @@ PanelWindow {
     root.hide()
   }
 
-  // scrim inside the screen frame (same inset as the app launcher) that fades with the panel
   Rectangle {
     anchors {
       fill: parent
@@ -112,7 +111,6 @@ PanelWindow {
     height: 0
     focus: root.open
 
-    // spring in, smooth (no overshoot) out
     states: State {
       name: "shown"
       when: root.open && root._ready
@@ -161,7 +159,7 @@ PanelWindow {
     RowLayout {
       id: buttons
       anchors.top: parent.top
-      anchors.topMargin: root.panelHeight - 120 - Global.pad
+      anchors.topMargin: Math.max(8, root.panelHeight - 120 - Global.pad)
       anchors.horizontalCenter: parent.horizontalCenter
       spacing: 18
 
@@ -183,13 +181,12 @@ PanelWindow {
 
           ColumnLayout {
             Layout.alignment: Qt.AlignCenter
-            // anchors.centerIn: parent
             spacing: 6
 
             Icon {
               font.pixelSize: 40
               color: actionButton.hovered ? Theme.m3primary : Theme.m3on_surface
-              text: modelData.icon // Fixed typo from modeData to modelData
+              text: modelData.icon
               Layout.alignment: Qt.AlignCenter
             }
 

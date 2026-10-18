@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 
+import qs.common
 import qs.components
 import qs.modules
 import qs.services
@@ -21,7 +22,10 @@ ShellRoot {
     PerScreen {}
   }
 
-  TodoList {}
+  Loader {
+    active: Global.todoEnabled
+    sourceComponent: TodoList {}
+  }
 
   // Lazy-loaded AppLauncher: unloaded from RAM when dismissed
   Loader {
@@ -153,5 +157,45 @@ ShellRoot {
     function hide(): void {
       if (powerMenuLoader.active) powerMenuLoader.item.hide()
     }
+  }
+
+  // Lazy-loaded SettingsApp: unloaded from RAM when dismissed
+  Loader {
+    id: settingsLoader
+    active: false
+    sourceComponent: SettingsApp {
+      onDismissed: settingsLoader.active = false
+    }
+  }
+
+  Connections {
+    target: Global
+
+    function onToggleSettings(): void {
+      if (settingsLoader.active && settingsLoader.item.open) {
+        settingsLoader.item.hide()
+      } else {
+        settingsLoader.active = true
+        settingsLoader.item.show()
+      }
+    }
+
+    function onShowSettings(): void {
+      settingsLoader.active = true
+      settingsLoader.item.show()
+    }
+
+    function onHideSettings(): void {
+      if (settingsLoader.active) settingsLoader.item.hide()
+    }
+  }
+
+  // Settings App IPC
+  //   qs ipc call settings toggle|show|hide
+  IpcHandler {
+    target: "settings"
+    function toggle(): void { Global.toggleSettings() }
+    function show(): void { Global.showSettings() }
+    function hide(): void { Global.hideSettings() }
   }
 }

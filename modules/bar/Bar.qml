@@ -16,12 +16,12 @@ PanelWindow {
   property color borderColor: Theme.m3surface
   property bool clockHovered: clock.hovered
 
-  readonly property bool controlCenterVisible: hotCornerArea.containsMouse
-  readonly property bool slidersZoneHovered: slidersTriggerHandler.hovered
+  readonly property bool controlCenterVisible: Global.controlCenterEnabled && hotCornerArea.containsMouse
+  readonly property bool slidersZoneHovered: Global.quickSlidersEnabled && slidersTriggerHandler.hovered
 
   // Match QuickSliders dimensions for the right-edge trigger strip
-  readonly property int slidersTriggerWidth: Global.border + 4
-  readonly property int slidersTriggerHeight: 150 * 2 + 12 + 2 * (Global.pad + Global.panelRadius)
+  readonly property int slidersTriggerWidth: Global.border + Global.quickSlidersTriggerWidth
+  readonly property int slidersTriggerHeight: Global.quickSlidersHeight * 2 + Global.quickSlidersSpacing + 2 * (Global.pad + Global.panelRadius)
 
   anchors {
     top: true
@@ -38,7 +38,7 @@ PanelWindow {
   WlrLayershell.namespace: "frame"
 
   onClockHoveredChanged: {
-    if (clockHovered) topDrawerLoader.active = true
+    if (clockHovered && Global.topDrawerEnabled) topDrawerLoader.active = true
   }
 
   // click-through: nothing in this window should intercept input except top bar, right slider zone, and hot corner
@@ -59,18 +59,18 @@ PanelWindow {
 
     // right-edge quick sliders hover zone
     Region {
-      x: frame.width - frame.slidersTriggerWidth
+      x: frame.width - (Global.quickSlidersEnabled ? frame.slidersTriggerWidth : 0)
       y: Math.round((frame.height - frame.slidersTriggerHeight) / 2)
-      width: frame.slidersTriggerWidth
-      height: frame.slidersTriggerHeight
+      width: Global.quickSlidersEnabled ? frame.slidersTriggerWidth : 0
+      height: Global.quickSlidersEnabled ? frame.slidersTriggerHeight : 0
     }
 
     // hot corner region
     Region {
-      x: frame.width - 20
-      y: frame.height - 20
-      width: 20
-      height: 20
+      x: frame.width - (Global.controlCenterEnabled ? Global.hotCornerSize : 0)
+      y: frame.height - (Global.controlCenterEnabled ? Global.hotCornerSize : 0)
+      width: Global.controlCenterEnabled ? Global.hotCornerSize : 0
+      height: Global.controlCenterEnabled ? Global.hotCornerSize : 0
     }
   }
 
@@ -121,27 +121,25 @@ PanelWindow {
 
     Workspaces {
       id: workspaces
+      visible: Global.barShowWorkspaces
       anchors.left: parent.left
       anchors.verticalCenter: parent.verticalCenter
     }
 
     Clock {
       id: clock
+      visible: Global.barShowClock
       anchors.centerIn: parent
-
-      // HoverHandler {
-      //   id: clockHandler
-      // }
     }
 
     RowLayout {
       id: rightGroup
       anchors.right: parent.right
       anchors.verticalCenter: parent.verticalCenter
-      spacing: 12
+      spacing: Global.barRightSpacing
 
-      SystemTray {}
-      CpuInfo {}
+      SystemTray { visible: Global.barShowSystemTray }
+      CpuInfo { visible: Global.barShowCpuInfo }
       Volume {}
       Battery {}
     }
@@ -152,13 +150,14 @@ PanelWindow {
     active: false
     sourceComponent: TopDrawer {
       screen: frame.screen
-      drawerHovered: frame.clockHovered
+      drawerHovered: frame.clockHovered && Global.topDrawerEnabled
       onDismissed: topDrawerLoader.active = false
     }
   }
 
   // right-edge trigger zone for QuickSliders
   Item {
+    visible: Global.quickSlidersEnabled
     width: frame.slidersTriggerWidth
     height: frame.slidersTriggerHeight
     anchors.right: parent.right
@@ -171,8 +170,9 @@ PanelWindow {
 
   // hot corner
   Rectangle {
-    width: 20
-    height: 20
+    visible: Global.controlCenterEnabled
+    width: Global.hotCornerSize
+    height: Global.hotCornerSize
     color: "transparent"
 
     anchors {

@@ -75,7 +75,7 @@ ColumnLayout {
       MprisService.positionTick
       return MprisService.position
     }
-    onMoved: MprisService.setPosition(value)
+    onMoved: (value) => MprisService.setPosition(value)
   }
 
   RowLayout {

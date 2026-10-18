@@ -14,9 +14,9 @@ PanelWindow {
 
   property bool open: false
   property bool _ready: false
-  property int panelWidth: 650
-  property int panelHeight: 450
-  property int maxResults: 500
+  property int panelWidth: Global.clipboardWidth
+  property int panelHeight: Global.clipboardHeight
+  property int maxResults: Global.clipboardMaxResults
   signal dismissed()
 
   Component.onCompleted: Qt.callLater(() => { clipboard._ready = true })
@@ -79,7 +79,6 @@ PanelWindow {
     hide()
   }
 
-  // click-outside-to-close backdrop
   Rectangle {
     anchors.fill: parent
     color: "transparent"
@@ -103,7 +102,6 @@ PanelWindow {
 
     color: "transparent"
 
-    // spring in, smooth (no overshoot) out
     states: State {
       name: "shown"
       when: clipboard.open && clipboard._ready
@@ -160,7 +158,6 @@ PanelWindow {
           selectedTextColor: Theme.m3on_primary
           clip: true
 
-          // new query -> start from the top result
           onTextChanged: listView.currentIndex = 0
 
           Keys.onPressed: (event) => {
@@ -212,7 +209,6 @@ PanelWindow {
         clip: true
         cacheBuffer: 0
 
-        // keep the keyboard selection on screen
         onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
 
         model: ScriptModel {

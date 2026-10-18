@@ -4,13 +4,18 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
+import qs.common
+
 Singleton {
   id: root
 
   property real brightness: 0.5
   property int maxBrightness: 0
   property bool ready: false
-  property string _device: "intel_backlight"
+  property string _detectedDevice: "intel_backlight"
+  readonly property string _device: Global.backlightDevice.trim() !== ""
+    ? Global.backlightDevice.trim()
+    : root._detectedDevice
 
   function setBrightness(value: real): void {
     if (!ready) return
@@ -23,7 +28,7 @@ Singleton {
 
   // Fallback slow poll for drivers that don't emit inotify on sysfs brightness
   Timer {
-    interval: 2000
+    interval: Math.max(500, Global.brightnessPollInterval)
     running: root.ready
     repeat: true
     triggeredOnStart: false
@@ -69,7 +74,7 @@ Singleton {
     stdout: StdioCollector {
       onStreamFinished: {
         const devices = text.trim().split("\n").filter(d => d.length > 0)
-        if (devices.length > 0) root._device = devices[0]
+        if (devices.length > 0) root._detectedDevice = devices[0]
       }
     }
   }

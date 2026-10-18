@@ -19,7 +19,7 @@ PanelWindow {
 
   property bool open: false
   property bool _ready: false
-  readonly property int panelWidth: 400 + Global.panelRadius + Global.pad
+  readonly property int panelWidth: Global.controlCenterWidth + Global.panelRadius + Global.pad
   signal dismissed()
 
   Component.onCompleted: Qt.callLater(() => { controlCenter._ready = true })
@@ -33,7 +33,6 @@ PanelWindow {
   aboveWindows: false
   exclusiveZone: 0
 
-  // Extra width headroom so the elastic spring overshoot on width is never clipped by the window
   implicitWidth: panelWidth + 100
   color: "transparent"
 
@@ -58,7 +57,7 @@ PanelWindow {
 
   Timer {
     id: hideDelay
-    interval: Global.dur.normal   // must match the Behavior's duration
+    interval: Global.dur.normal
     onTriggered: {
       if (!controlCenter.open) controlCenter.dismissed()
     }
@@ -72,7 +71,6 @@ PanelWindow {
     anchors.right: parent.right
     width: 0
 
-    // spring in, smooth (no overshoot) out
     states: State {
       name: "shown"
       when: controlCenter.open && controlCenter._ready
@@ -135,17 +133,16 @@ PanelWindow {
       anchors.bottomMargin: Global.panelRadius
       spacing: 12
 
-      // content fades in/out with the panel instead of just being clipped
       opacity: Math.max(0, Math.min(1, panel.width / (controlCenter.panelWidth * 0.85)))
 
       NotificationCenter {
         Layout.fillWidth: true
-        Layout.fillHeight: true   // grows to fill available space, pushing QuickSettings down
+        Layout.fillHeight: true
       }
 
       QuickSettings {
         Layout.fillWidth: true
-        Layout.alignment: Qt.AlignBottom   // stays pinned to the bottom edge
+        Layout.alignment: Qt.AlignBottom
       }
     }
   }

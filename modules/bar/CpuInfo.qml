@@ -8,7 +8,6 @@ import qs.services
 
 Item {
   implicitWidth: row.implicitWidth + Global.pad
-  // implicitHeight: row.implicitHeight
   implicitHeight: Global.pillHeight - 10
   readonly property int usage: Math.round(SystemStatsService.cpuUsage)
   readonly property int temp: Math.round(SystemStatsService.cpuTemp)
@@ -22,8 +21,8 @@ Item {
   RowLayout {
     id: row
     anchors.fill: parent
-    anchors.leftMargin: Global.pad /2
-    anchors.rightMargin: Global.pad /2
+    anchors.leftMargin: Global.pad / 2
+    anchors.rightMargin: Global.pad / 2
     spacing: 6
 
     Icon {
@@ -34,25 +33,27 @@ Item {
     Label {
       text: usage + "%"
       font.bold: true
-      color: usage > 90 ? Theme.m3error : Theme.m3on_surface
+      color: usage > Global.cpuWarnThreshold ? Theme.m3error : Theme.m3on_surface
     }
 
     Label {
+      visible: Global.barShowCpuTemp
       text: " | "
       font.bold: true
-      color: usage > 90 ? Theme.m3error : Theme.m3on_surface
+      color: usage > Global.cpuWarnThreshold ? Theme.m3error : Theme.m3on_surface
     }
 
     Label {
+      visible: Global.barShowCpuTemp
       text: temp + "°C"
       font.bold: true
-      color: temp > 85 ? Theme.m3error : Theme.m3on_surface
+      color: temp > Global.tempWarnThreshold ? Theme.m3error : Theme.m3on_surface
     }
 
     Icon {
+      visible: Global.barShowCpuTemp
       text: "device_thermostat"
-      color: temp > 85 ? Theme.m3error : Theme.m3on_surface
+      color: temp > Global.tempWarnThreshold ? Theme.m3error : Theme.m3on_surface
     }
   }
-
 }

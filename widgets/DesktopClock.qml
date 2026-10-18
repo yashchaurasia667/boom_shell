@@ -8,9 +8,9 @@ import qs.components
 
 PanelWindow {
   id: root
-  property int panelMargins: 20
-  property string clockFont: "Changa One"
-  property int fontSize: 220
+  property int panelMargins: Global.desktopClockMargins
+  property string clockFont: Global.desktopClockFont
+  property int fontSize: Global.desktopClockFontSize
 
   anchors {
     left: true
@@ -20,19 +20,19 @@ PanelWindow {
   WlrLayershell.layer: WlrLayer.Bottom
   mask: Region {}
 
-  implicitWidth: 400
-  implicitHeight: 450
+  implicitWidth: Math.max(400, fontSize * 2 + panelMargins * 2)
+  implicitHeight: Math.max(450, fontSize * 2 + 60)
   color: "transparent"
 
   ColumnLayout {
     anchors.fill: parent
     anchors.leftMargin: panelMargins
-    spacing: -90
+    spacing: -Math.round(root.fontSize * 0.4)
 
     ColumnLayout {
       Layout.fillWidth: true
       Layout.fillHeight: true
-      spacing: -(root.fontSize/2)
+      spacing: -(root.fontSize / 2)
 
       SystemClock {
         id: clock
@@ -40,7 +40,7 @@ PanelWindow {
       }
 
       Label {
-        text: Qt.formatDateTime(clock.date, "hh")
+        text: Qt.formatDateTime(clock.date, Global.desktopClock24h ? "HH" : "hh")
         font.family: clockFont
         font.pixelSize: root.fontSize
         color: Theme.m3primary
@@ -60,9 +60,9 @@ PanelWindow {
     }
 
     Label {
-      text: Qt.formatDateTime(clock.date, "dddd, d MMMM yyyy")
-      font.pixelSize: 28
-      font.family: "Rowdies Light"
+      text: Qt.formatDateTime(clock.date, Global.desktopClockDateFormat)
+      font.pixelSize: Global.desktopClockDateSize
+      font.family: Global.desktopClockDateFont
       color: Theme.m3on_error_container
 
       style: Text.Raised

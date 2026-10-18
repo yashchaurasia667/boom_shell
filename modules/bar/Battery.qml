@@ -9,16 +9,16 @@ import qs.components
 Item {
   readonly property int charge: Math.round(UPower.displayDevice.percentage * 100)
   readonly property string batColor: {
-    if(charge >= 90) return Theme.m3primary
-    if(charge >= 50) return Theme.m3tertiary
-    if(charge >= 20) return Theme.m3error
+    if (charge >= Global.batteryHighThreshold) return Theme.m3primary
+    if (charge >= Global.batteryMedThreshold) return Theme.m3tertiary
+    if (charge >= Global.batteryLowThreshold) return Theme.m3error
     return Theme.m3error_container
   }
 
   implicitWidth: row.implicitWidth
   implicitHeight: row.implicitHeight
 
-  visible: UPower.displayDevice.isLaptopBattery
+  visible: Global.barShowBattery && (Global.batteryAlwaysShow || UPower.displayDevice.isLaptopBattery)
 
   RowLayout {
     id: row

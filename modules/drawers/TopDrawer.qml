@@ -16,12 +16,12 @@ PanelWindow {
   id: drawer
 
   // Overall geometry matched to the reference layout (+ NotchShape side ears)
-  property int contentWidth: 618
-  property int contentHeight: 460
+  property int contentWidth: Global.topDrawerWidth
+  property int contentHeight: Global.topDrawerHeight
   property int drawerWidth: contentWidth + 2 * (Global.pad + Global.panelRadius)
   property int drawerHeight: contentHeight + Global.pad + Global.notchRadius + 10
-  property int gridGap: 10
-  property int cardRadius: 20
+  property int gridGap: Global.topDrawerGridGap
+  property int cardRadius: Global.topDrawerCardRadius
 
   property bool drawerHovered: false
   property bool _ready: false
@@ -114,6 +114,13 @@ PanelWindow {
 
   function runIpcAndClose(target: string): void {
     Quickshell.execDetached(["qs", "ipc", "call", target, "toggle"])
+    drawer.drawerHovered = false
+    hideTimer.stop()
+    drawer.dismissed()
+  }
+
+  function openSettingsAndClose(): void {
+    Global.showSettings()
     drawer.drawerHovered = false
     hideTimer.stop()
     drawer.dismissed()
@@ -312,7 +319,7 @@ PanelWindow {
 
   Timer {
     id: hideTimer
-    interval: 250
+    interval: Global.topDrawerHideDelay
     onTriggered: closeDelay.restart()
   }
 
@@ -442,6 +449,7 @@ PanelWindow {
               QuickToggleTile {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                radius: drawer.cardRadius
                 icon: NetworkService.wifiEnabled ? "wifi" : "wifi_off"
                 title: "Wi-Fi"
                 subtitle: NetworkService.wifiEnabled
@@ -457,6 +465,7 @@ PanelWindow {
               QuickToggleTile {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                radius: drawer.cardRadius
                 readonly property bool btEnabled: Bluetooth.defaultAdapter?.enabled ?? false
                 icon: btEnabled ? "bluetooth" : "bluetooth_disabled"
                 title: "Bluetooth"
@@ -482,6 +491,7 @@ PanelWindow {
               QuickToggleTile {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                radius: drawer.cardRadius
                 icon: NotificationService.doNotDisturb ? "notifications_off" : "notifications"
                 title: "Focus"
                 subtitle: NotificationService.doNotDisturb ? "On" : "Off"
@@ -494,6 +504,7 @@ PanelWindow {
               QuickToggleTile {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                radius: drawer.cardRadius
                 readonly property int notifCount: NotificationService.historyCount
                 icon: "forum"
                 title: "Inbox"
@@ -539,6 +550,7 @@ PanelWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.preferredHeight: 198
+            radius: drawer.cardRadius + 2
             active: drawer.open && drawer.activeView === "main"
           }
 
@@ -601,7 +613,7 @@ PanelWindow {
                           drawer.runIpcAndClose(modelData.id)
                           break
                         case "screenshot":
-                          Quickshell.execDetached(["sh", "-c", "hyprshot -m region || grim"])
+                          Quickshell.execDetached(["sh", "-c", Global.screenshotCmd])
                           drawer.drawerHovered = false
                           drawer.dismissed()
                           break
@@ -612,9 +624,7 @@ PanelWindow {
                           drawer.cyclePowerProfile()
                           break
                         case "settings":
-                          Quickshell.execDetached(["sh", "-c", "XDG_CURRENT_DESKTOP=GNOME gnome-control-center || pavucontrol"])
-                          drawer.drawerHovered = false
-                          drawer.dismissed()
+                          drawer.openSettingsAndClose()
                           break
                       }
                     }
@@ -709,7 +719,7 @@ PanelWindow {
                 text: Math.round(SystemStatsService.cpuTemp) + "°C"
                 font.pixelSize: 28
                 font.bold: true
-                color: SystemStatsService.cpuTemp > 85 ? Theme.m3error : drawer.textPrimary
+                color: SystemStatsService.cpuTemp > Global.tempWarnThreshold ? Theme.m3error : drawer.textPrimary
               }
 
               StatProgressBar {

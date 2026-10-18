@@ -9,16 +9,14 @@ import qs.components
 Item {
   id: root
 
-  property bool expanded: false
-  readonly property int iconSize: 20
-  readonly property int iconSpacing: 8
+  property bool expanded: Global.trayStartExpanded
+  readonly property int iconSize: Global.trayIconSize
+  readonly property int iconSpacing: Global.trayIconSpacing
 
   readonly property int trayContentWidth:
     SystemTray.items.values.length * iconSize +
     Math.max(0, SystemTray.items.values.length - 1) * iconSpacing
 
-  // Let the internal Row dictate our width automatically.
-  // Added + 16 here to give a nice 8px padding on both left and right sides.
   implicitWidth: contentRow.width + 16
   implicitHeight: Global.pillHeight - 12
   Layout.fillWidth: true
@@ -29,10 +27,9 @@ Item {
     color: Theme.m3surface_variant
   }
 
-  // A Row naturally handles the relative positioning without anchor swapping bugs
   Row {
     id: contentRow
-    anchors.centerIn: parent // Keeps everything perfectly aligned inside the pill
+    anchors.centerIn: parent
     spacing: root.expanded ? root.iconSpacing : 0
 
     Behavior on spacing {
@@ -54,7 +51,6 @@ Item {
       RowLayout {
         height: parent.height
         spacing: root.iconSpacing
-        // Keep this anchored to the right so icons reveal nicely outward from the toggle
         anchors.right: parent.right
 
         Repeater {
@@ -102,7 +98,6 @@ Item {
       }
     }
 
-    // Static anchors - no dynamic swapping needed
     Icon {
       id: toggleIcon
       anchors.verticalCenter: parent.verticalCenter

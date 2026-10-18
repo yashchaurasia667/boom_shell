@@ -4,12 +4,14 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
+import qs.common
+
 Singleton {
   id: root
 
   // Opt-in flags for unused stats so we don't spawn nvidia-smi or parse /proc/meminfo every 2s at idle
   property bool pollRam: false
-  property bool pollGpu: false
+  property bool pollGpu: Global.pollGpu
 
   // --- CPU ---
   readonly property real cpuUsage: _cpuUsage    // 0.0–100.0
@@ -36,7 +38,7 @@ Singleton {
   property var _prevTotal: 0
 
   Timer {
-    interval: 2000
+    interval: Math.max(500, Global.statsPollInterval)
     running: true
     repeat: true
     triggeredOnStart: true
@@ -53,9 +55,9 @@ Singleton {
     id: statFile
     path: "/proc/stat"
     onLoaded: {
-      const line = text().split("\n")[0] // "cpu  user nice system idle iowait irq softirq ..."
+      const line = text().split("\n")[0]
       const parts = line.trim().split(/\s+/).slice(1).map(Number)
-      const idle = parts[3] + parts[4] // idle + iowait
+      const idle = parts[3] + parts[4]
       const total = parts.reduce((a, b) => a + b, 0)
 
       const deltaIdle = idle - root._prevIdle
@@ -63,7 +65,6 @@ Singleton {
 
       if (root._prevTotal > 0 && deltaTotal > 0) {
         const nextUsage = Math.round((1 - deltaIdle / deltaTotal) * 100)
-        // Only assign when the integer percentage changes to avoid unnecessary bar repaints
         if (nextUsage !== root._cpuUsage) {
           root._cpuUsage = nextUsage
         }
@@ -83,7 +84,7 @@ Singleton {
       const lines = text().split("\n")
       const get = (key) => {
         const line = lines.find(l => l.startsWith(key))
-        return line ? parseInt(line.match(/\d+/)[0]) : 0 // kB
+        return line ? parseInt(line.match(/\d+/)[0]) : 0
       }
 
       const total = get("MemTotal:")
@@ -111,10 +112,10 @@ Singleton {
     }
   }
 
-  // CPU temp — adjust hwmon path for your sensor
+  // CPU temp — bound to Global.cpuTempHwmonPath
   FileView {
     id: cpuTempFile
-    path: "/sys/class/hwmon/hwmon5/temp1_input"
+    path: Global.cpuTempHwmonPath
     onLoaded: {
       const milliC = parseInt(text().trim())
       if (!isNaN(milliC)) {

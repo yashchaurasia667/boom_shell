@@ -9,7 +9,7 @@ import qs.components
 Item {
   readonly property var ws: Hyprland.workspaces
   readonly property var focusedWs: Hyprland.focusedWorkspace
-  readonly property int minSlots: 4
+  readonly property int minSlots: Global.wsMinSlots
 
   property string openSpecialName: ""
 
@@ -25,6 +25,7 @@ Item {
   }
 
   readonly property var specialSlots: {
+    if (!Global.wsShowSpecial) return []
     const specials = Hyprland.workspaces.values
       .filter(w => w.id < 0 && w.name.startsWith("special:"))
     return specials.map(w => ({
@@ -35,21 +36,23 @@ Item {
   }
 
   height: Global.pillHeight
-  implicitWidth: row.implicitWidth   // without this the Item is 0px wide and the row just overflows it
+  implicitWidth: row.implicitWidth
   Layout.alignment: Qt.AlignLeft
 
   RowLayout {
     id: row
     anchors.fill: parent
-    spacing: 10
+    spacing: Global.wsSpacing
 
     Repeater {
       model: ScriptModel {
         values: {
+          const baseSlots = []
+          for (let i = 1; i <= Math.max(1, minSlots); i++) baseSlots.push(i)
           const occupiedIds = Hyprland.workspaces.values
             .filter(w => w.id > 0 && w.toplevels.values.length > 0)
             .map(w => w.id)
-          return [...new Set([1, 2, 3, 4, ...occupiedIds])].sort((a, b) => a - b)
+          return [...new Set([...baseSlots, ...occupiedIds])].sort((a, b) => a - b)
         }
       }
 

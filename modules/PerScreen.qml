@@ -16,7 +16,7 @@ Scope {
   id: root
   required property var modelData
   property bool showNotifications: false
-  readonly property bool isAnyHovered: bar.controlCenterVisible || (controlCenterLoader.item?.isHovered ?? false)
+  readonly property bool isAnyHovered: (Global.controlCenterEnabled && bar.controlCenterVisible) || (controlCenterLoader.item?.isHovered ?? false)
 
   // opened through IPC: stays open until toggled again, or until the pointer has entered and left it
   property bool pinnedOpen: false
@@ -71,7 +71,7 @@ Scope {
 
   Timer {
     id: hideTimer
-    interval: 200
+    interval: Global.controlCenterHideDelay
     onTriggered: root.showNotifications = false
   }
 
@@ -84,12 +84,15 @@ Scope {
     id: bar
     screen: root.modelData
     onSlidersZoneHoveredChanged: {
-      if (slidersZoneHovered) quickSlidersLoader.active = true
+      if (slidersZoneHovered && Global.quickSlidersEnabled) quickSlidersLoader.active = true
     }
   }
 
-  DesktopClock {
-    screen: root.modelData
+  Loader {
+    active: Global.desktopClockEnabled
+    sourceComponent: DesktopClock {
+      screen: root.modelData
+    }
   }
 
   // Only allocate NotificationToast PanelWindow when there are active notifications
