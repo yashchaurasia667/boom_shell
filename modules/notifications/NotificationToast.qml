@@ -15,9 +15,12 @@ PanelWindow {
 
   property int toastWidth: 340
 
+  // Fixed-size window (full height, click-through via the mask below). Resizing a layer-shell
+  // surface every animation frame causes flicker, so the window never changes size.
   anchors {
     top: true
     right: true
+    bottom: true
   }
 
   margins {
@@ -30,8 +33,6 @@ PanelWindow {
 
   color: "transparent"
   implicitWidth: toastWidth + Global.panelRadius + Global.pad
-  // Extra vertical headroom so elastic height overshoot is never clipped by the window
-  implicitHeight: Math.max(1, column.implicitHeight + Global.panelRadius + Global.pad + 60)
 
   // click-through everywhere except where toasts actually are
   mask: Region {
@@ -43,7 +44,9 @@ PanelWindow {
     anchors.top: parent.top
     anchors.right: parent.right
     width: popup.implicitWidth
-    height: column.implicitHeight <= 0 ? 0 : column.implicitHeight + Global.panelRadius + Global.pad
+    // the frame's extra padding eases in/out with the content, so it never pops when the last toast leaves
+    height: column.implicitHeight
+      + (Global.panelRadius + Global.pad - 8) * Math.max(0, Math.min(1, column.implicitHeight / 40))
 
     // framed shape
     Shape {
@@ -85,7 +88,7 @@ PanelWindow {
       width: popup.toastWidth
       anchors.right: parent.right
       anchors.top: parent.top
-      spacing: 8
+      spacing: 0   // each tile carries its own bottom gap
 
       Repeater {
         model: NotificationService.notifications

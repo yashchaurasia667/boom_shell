@@ -133,7 +133,10 @@ PanelWindow {
       anchors.bottom: parent.bottom
       anchors.topMargin: Global.pad
       anchors.bottomMargin: Global.panelRadius
-      spacing: 8
+      spacing: 12
+
+      // content fades in/out with the panel instead of just being clipped
+      opacity: Math.max(0, Math.min(1, panel.width / (controlCenter.panelWidth * 0.85)))
 
       NotificationCenter {
         Layout.fillWidth: true

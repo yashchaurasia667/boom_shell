@@ -8,6 +8,7 @@ import QtQuick
 
 import qs.components
 import qs.modules
+import qs.services
 import qs.widgets
 
 import "modules/bar"
@@ -48,6 +49,26 @@ ShellRoot {
     function hide(): void {
       if (launcherLoader.active) launcherLoader.item.hide()
     }
+  }
+
+  // Control center (notifications + quick settings) on the focused screen
+  //   qs ipc call controlcenter toggle|show|hide
+  IpcHandler {
+    target: "controlcenter"
+    function toggle(): void { ControlCenterState.toggleRequested() }
+    function show(): void { ControlCenterState.showRequested() }
+    function hide(): void { ControlCenterState.hideRequested() }
+  }
+
+  // Notifications
+  //   qs ipc call notifications toggleDnd|enableDnd|disableDnd|clear|dnd
+  IpcHandler {
+    target: "notifications"
+    function toggleDnd(): void { NotificationService.toggleDoNotDisturb() }
+    function enableDnd(): void { NotificationService.setDoNotDisturb(true) }
+    function disableDnd(): void { NotificationService.setDoNotDisturb(false) }
+    function clear(): void { NotificationService.clearHistory() }
+    function dnd(): bool { return NotificationService.doNotDisturb }
   }
 
   // Lazy-loaded Clipboard: unloaded from RAM when dismissed

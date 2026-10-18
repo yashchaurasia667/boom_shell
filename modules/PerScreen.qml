@@ -2,6 +2,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 
+import Quickshell.Hyprland
+
 import qs.common
 import qs.services
 import qs.widgets
@@ -16,13 +18,54 @@ Scope {
   property bool showNotifications: false
   readonly property bool isAnyHovered: bar.controlCenterVisible || (controlCenterLoader.item?.isHovered ?? false)
 
+  // opened through IPC: stays open until toggled again, or until the pointer has entered and left it
+  property bool pinnedOpen: false
+  property bool _pinnedHoverSeen: false
+  readonly property bool controlCenterOpen: showNotifications || pinnedOpen
+
+  readonly property bool isFocusedScreen: Hyprland.focusedMonitor
+    ? Hyprland.focusedMonitor.name === modelData.name
+    : modelData === Quickshell.screens[0]
+
+  function openControlCenter(): void {
+    hideTimer.stop()
+    controlCenterLoader.active = true
+    root._pinnedHoverSeen = false
+    root.pinnedOpen = true
+  }
+
+  function closeControlCenter(): void {
+    root.pinnedOpen = false
+    root.showNotifications = false
+  }
+
   onIsAnyHoveredChanged: {
     if (isAnyHovered) {
       hideTimer.stop()
       controlCenterLoader.active = true
       root.showNotifications = true
+      if (root.pinnedOpen) root._pinnedHoverSeen = true
     } else {
       hideTimer.restart()
+      if (root.pinnedOpen && root._pinnedHoverSeen) root.pinnedOpen = false
+    }
+  }
+
+  Connections {
+    target: ControlCenterState
+
+    function onToggleRequested(): void {
+      if (!root.isFocusedScreen) return
+      if (root.controlCenterOpen) root.closeControlCenter()
+      else root.openControlCenter()
+    }
+
+    function onShowRequested(): void {
+      if (root.isFocusedScreen && !root.controlCenterOpen) root.openControlCenter()
+    }
+
+    function onHideRequested(): void {
+      if (root.isFocusedScreen) root.closeControlCenter()
     }
   }
 
@@ -74,7 +117,7 @@ Scope {
     active: false
     sourceComponent: ControlCenter {
       screen: root.modelData
-      open: root.showNotifications
+      open: root.controlCenterOpen
       onDismissed: controlCenterLoader.active = false
     }
   }

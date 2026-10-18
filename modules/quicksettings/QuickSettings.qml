@@ -311,7 +311,9 @@ Item {
         radius: 18
         icon: NotificationService.doNotDisturb ? "notifications_off" : "notifications"
         title: "Focus"
-        subtitle: NotificationService.doNotDisturb ? "Do Not Disturb" : "Off"
+        subtitle: NotificationService.doNotDisturb
+          ? (NotificationService.missedCount > 0 ? NotificationService.missedCount + " silenced" : "Do Not Disturb")
+          : "Off"
         active: NotificationService.doNotDisturb
         onClicked: NotificationService.doNotDisturb = !NotificationService.doNotDisturb
         onIconToggled: NotificationService.doNotDisturb = !NotificationService.doNotDisturb
