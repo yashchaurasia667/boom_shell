@@ -19,7 +19,8 @@ PanelWindow {
   property int contentWidth: Global.topDrawerWidth
   property int contentHeight: Global.topDrawerHeight
   property int drawerWidth: contentWidth + 2 * (Global.pad + Global.panelRadius)
-  property int drawerHeight: contentHeight + Global.pad + Global.notchRadius + 10
+  property int tabBarHeight: 50
+  property int drawerHeight: contentHeight + Global.pad + Global.notchRadius + 10 + tabBarHeight
   property int gridGap: Global.topDrawerGridGap
   property int cardRadius: Global.topDrawerCardRadius
 
@@ -29,6 +30,9 @@ PanelWindow {
 
   // Active drawer view: "main" | "wifi" | "bluetooth"
   property string activeView: "main"
+
+  // Active top-level tab: 0 = Dashboard, 1 = Calendar & Timer
+  property int currentTab: 0
 
   signal dismissed()
 
@@ -74,6 +78,13 @@ PanelWindow {
     if (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled) {
       Bluetooth.defaultAdapter.discovering = true
     }
+  }
+
+  function switchTab(index: int): void {
+    if (index === currentTab) return
+    // leaving the dashboard: close any Wi-Fi / Bluetooth sub-view first
+    if (activeView !== "main") backToMain()
+    currentTab = index
   }
 
   function backToMain(): void {
@@ -314,7 +325,7 @@ PanelWindow {
   }
 
   onOpenChanged: {
-    if (!open) backToMain()
+    if (!open) { backToMain(); currentTab = 0 }
   }
 
   Timer {
@@ -399,6 +410,74 @@ PanelWindow {
       edge: "top"
     }
 
+    // ── Tab switcher (top of drawer) ──
+    Rectangle {
+      id: tabBar
+      anchors.top: parent.top
+      anchors.topMargin: 8
+      anchors.horizontalCenter: parent.horizontalCenter
+      height: drawer.tabBarHeight - 10
+      width: drawer.contentWidth
+      readonly property real tabWidth: (width - 8) / 2
+      radius: height / 2
+      color: drawer.cardColor
+
+      // sliding highlight
+      Rectangle {
+        y: 4
+        height: parent.height - 8
+        width: tabBar.tabWidth
+        radius: height / 2
+        color: drawer.activeColor
+        x: 4 + drawer.currentTab * tabBar.tabWidth
+        Behavior on x { Anim {} }
+      }
+
+      Row {
+        id: tabRow
+        anchors.centerIn: parent
+
+        Repeater {
+          model: [
+            { icon: "dashboard",      label: "Dashboard" },
+            { icon: "calendar_month", label: "Calendar & Timer" }
+          ]
+
+          delegate: Item {
+            required property int index
+            required property var modelData
+            readonly property bool selected: drawer.currentTab === index
+            width: tabBar.tabWidth
+            height: tabBar.height
+
+            Row {
+              anchors.centerIn: parent
+              spacing: 6
+              Icon {
+                anchors.verticalCenter: parent.verticalCenter
+                text: modelData.icon
+                font.pixelSize: 18
+                color: selected ? drawer.activeContentColor : drawer.textSecondary
+              }
+              Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: modelData.label
+                font.pixelSize: 13
+                font.bold: selected
+                color: selected ? drawer.activeContentColor : drawer.textSecondary
+              }
+            }
+
+            MouseArea {
+              anchors.fill: parent
+              cursorShape: Qt.PointingHandCursor
+              onClicked: drawer.switchTab(index)
+            }
+          }
+        }
+      }
+    }
+
     Item {
       id: viewport
       width: drawer.contentWidth
@@ -416,8 +495,8 @@ PanelWindow {
         anchors.fill: parent
         spacing: drawer.gridGap
         visible: opacity > 0.01
-        opacity: drawer.activeView === "main" ? 1 : 0
-        scale: drawer.activeView === "main" ? 1.0 : 0.96
+        opacity: (drawer.currentTab === 0 && drawer.activeView === "main") ? 1 : 0
+        scale: (drawer.currentTab === 0 && drawer.activeView === "main") ? 1.0 : 0.96
 
         Behavior on opacity {
           NumberAnimation { duration: Global.dur.fast }
@@ -551,7 +630,7 @@ PanelWindow {
             Layout.fillHeight: true
             Layout.preferredHeight: 198
             radius: drawer.cardRadius + 2
-            active: drawer.open && drawer.activeView === "main"
+            active: drawer.open && drawer.currentTab === 0 && drawer.activeView === "main"
           }
 
           // Bottom Row: Pill Quick-Action Dock
@@ -730,6 +809,39 @@ PanelWindow {
               Item { Layout.fillHeight: true }
             }
           }
+        }
+      }
+
+      // ════════════════════════════════════════════════════════════════
+      // 4. CALENDAR & TIMER TAB (left: calendar, right: timer — equal halves)
+      // ════════════════════════════════════════════════════════════════
+      RowLayout {
+        id: toolsRow
+        anchors.fill: parent
+        spacing: drawer.gridGap
+        visible: opacity > 0.01
+        opacity: drawer.currentTab === 1 ? 1 : 0
+        scale: drawer.currentTab === 1 ? 1.0 : 0.96
+
+        Behavior on opacity {
+          NumberAnimation { duration: Global.dur.fast }
+        }
+        Behavior on scale {
+          Anim {}
+        }
+
+        CalendarCard {
+          Layout.fillWidth: true
+          Layout.fillHeight: true
+          Layout.preferredWidth: 1
+          radius: drawer.cardRadius + 2
+        }
+
+        TimerCard {
+          Layout.fillWidth: true
+          Layout.fillHeight: true
+          Layout.preferredWidth: 1
+          radius: drawer.cardRadius + 2
         }
       }
 
