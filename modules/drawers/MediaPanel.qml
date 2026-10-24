@@ -23,17 +23,38 @@ ColumnLayout {
       clip: true
 
       Image {
+        id: art
         anchors.fill: parent
-        visible: MprisService.artUrl !== ""
-        source: MprisService.artUrl
-        sourceSize: Qt.size(56, 56)
+        source: MprisService.artSource
+        sourceSize: Qt.size(112, 112)      // 2x for HiDPI
         asynchronous: true
-        cache: false
+        cache: false                        // browsers reuse the same temp path for new art
         fillMode: Image.PreserveAspectCrop
+        opacity: status === Image.Ready ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 150 } }
+
+        // art often arrives before the file/URL is ready; retry a few times
+        property int attempts: 0
+        onSourceChanged: attempts = 0
+        onStatusChanged: if (status === Image.Error && source != "" && attempts < 3) {
+          console.warn("MediaPanel: failed to load art:", source, "(player url:", MprisService.artUrl + ")")
+          retryTimer.restart()
+        }
+
+        Timer {
+          id: retryTimer
+          interval: 1200
+          onTriggered: {
+            art.attempts++
+            const s = art.source
+            art.source = ""
+            art.source = s
+          }
+        }
       }
 
       Icon {
-        visible: MprisService.artUrl === ""
+        visible: art.status !== Image.Ready
         anchors.centerIn: parent
         text: "music_note"
         font.pixelSize: 24
@@ -71,11 +92,12 @@ ColumnLayout {
     enabled: MprisService.canSeek
     from: 0
     to: MprisService.length > 0 ? MprisService.length : 1
-    value: {
-      MprisService.positionTick
-      return MprisService.position
-    }
     onMoved: (value) => MprisService.setPosition(value)
+
+    // Binding (unlike a plain `value:` expression) survives the user dragging the slider
+    Binding on value {
+      value: MprisService.position
+    }
   }
 
   RowLayout {

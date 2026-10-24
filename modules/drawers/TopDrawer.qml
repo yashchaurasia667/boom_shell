@@ -130,6 +130,13 @@ PanelWindow {
     drawer.dismissed()
   }
 
+  function openControlCenterAndClose(): void {
+    ControlCenterState.showRequested()
+    drawer.drawerHovered = false
+    hideTimer.stop()
+    drawer.dismissed()
+  }
+
   function openSettingsAndClose(): void {
     Global.showSettings()
     drawer.drawerHovered = false
@@ -589,12 +596,8 @@ PanelWindow {
                 title: "Inbox"
                 subtitle: notifCount + " new"
                 active: notifCount > 0
-                onClicked: {
-                  if (notifCount > 0) NotificationService.clearHistory()
-                }
-                onIconToggled: {
-                  if (notifCount > 0) NotificationService.clearHistory()
-                }
+                onClicked: drawer.openControlCenterAndClose()
+                onIconToggled: drawer.openControlCenterAndClose()
               }
             }
 

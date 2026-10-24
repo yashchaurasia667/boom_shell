@@ -10,6 +10,7 @@ Item {
 
   property int fontSize: Global.barClockFontSize
   property bool hovered: hoverHandler.hovered
+  readonly property real contentWidth: layout.implicitWidth   // width of the actual text, for side widgets
 
   implicitWidth: Math.max(400, layout.implicitWidth + 32)
   implicitHeight: Global.reserveTop

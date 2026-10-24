@@ -132,6 +132,24 @@ PanelWindow {
       anchors.centerIn: parent
     }
 
+    // audio visualizer, left of the clock text (only while media is playing)
+    CavaWidget {
+      id: cava
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.right: parent.horizontalCenter
+      anchors.rightMargin: clock.contentWidth / 2 + 14
+    }
+
+    // timer ring, right of the clock text (only while a timer exists);
+    // expands to show remaining time when the clock (or the widget) is hovered
+    TimerWidget {
+      id: timerWidget
+      expanded: clock.hovered || hoveredSelf
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: parent.horizontalCenter
+      anchors.leftMargin: clock.contentWidth / 2 + 14
+    }
+
     RowLayout {
       id: rightGroup
       anchors.right: parent.right
