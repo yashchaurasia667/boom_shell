@@ -144,16 +144,20 @@ PanelWindow {
     drawer.dismissed()
   }
 
-  function cyclePowerProfile(): void {
-    const cur = PowerProfiles.profile
-    if (cur === PowerProfile.PowerSaver) {
-      PowerProfiles.profile = PowerProfile.Balanced
-    } else if (cur === PowerProfile.Balanced) {
-      PowerProfiles.profile = PowerProfile.Performance
-    } else {
-      PowerProfiles.profile = PowerProfile.PowerSaver
-    }
-  }
+  // function cycleNightLight(): void {
+  //   NightLightService.toggle()
+  // }
+
+  // function cyclePowerProfile(): void {
+  //   const cur = PowerProfiles.profile
+  //   if (cur === PowerProfile.PowerSaver) {
+  //     PowerProfiles.profile = PowerProfile.Balanced
+  //   } else if (cur === PowerProfile.Balanced) {
+  //     PowerProfiles.profile = PowerProfile.Performance
+  //   } else {
+  //     PowerProfiles.profile = PowerProfile.PowerSaver
+  //   }
+  // }
 
   // ── Normalized Models for ConnectionListPanel ──
 
@@ -657,8 +661,8 @@ PanelWindow {
                   { id: "screenshot", icon: "photo_camera",       highlight: false },
                   { id: "powermenu",  icon: "power_settings_new", highlight: false },
                   { id: "caffeine",   icon: "coffee",             highlight: drawer.caffeineActive },
-                  { id: "profile",    icon: "speed",              highlight: PowerProfiles.profile === PowerProfile.Performance },
-                  { id: "settings",   icon: "settings",           highlight: true }
+                  { id: "night_light",icon: "bedtime",            highlight: NightLightService.on },
+                  { id: "settings",   icon: "settings",           highlight: false }
                 ]
 
                 delegate: Item {
@@ -702,8 +706,8 @@ PanelWindow {
                         case "caffeine":
                           drawer.caffeineActive = !drawer.caffeineActive
                           break
-                        case "profile":
-                          drawer.cyclePowerProfile()
+                        case "night_light":
+                          NightLightService.toggle()
                           break
                         case "settings":
                           drawer.openSettingsAndClose()

@@ -18,6 +18,7 @@ Singleton {
   property int fontSize: 14
   property string terminal: "alacritty"
   property string screenshotCmd: "hyprshot -m region || grim"
+  property int nightLight: 5500
 
   // ── 2. Screen Frame & Geometry ──
   property int pillHeight: 38

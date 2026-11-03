@@ -161,6 +161,11 @@ PanelWindow {
       title: "Applied Wallpaper Cache Path", subtitle: "Target file where the active wallpaper is copied for Matugen/lockscreen use",
       icon: "image", type: "string"
     },
+    {
+      key: "nightLight", category: "theme", section: "Night Light",
+      title: "Temperature", subtitle: "1000k - 25000k",
+      icon: "wb_sunny", type: "int", min: 1000, max: 25000, step: 100, unit: ""
+    },
 
     // 2. TYPOGRAPHY & GENERAL
     {
